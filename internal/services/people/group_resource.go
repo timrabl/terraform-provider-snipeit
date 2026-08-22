@@ -102,7 +102,7 @@ func (m *GroupResourceModel) toBody(ctx context.Context) (map[string]any, error)
 func (m *GroupResourceModel) fromAPI(ctx context.Context, api *peopleapi.Group) error {
 	m.ID = types.Int64Value(api.Id)
 	m.Name = types.StringValue(api.Name)
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 	// When permissions are not configured, Snipe-IT generates a full default
 	// map ("0" for every known permission). Reflecting that map into state
 	// would drift against a null config, so an unconfigured map stays null.

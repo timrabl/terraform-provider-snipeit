@@ -32,25 +32,26 @@ type LicenseDataSource struct {
 
 // LicenseDataSourceModel describes the data source data model.
 type LicenseDataSourceModel struct {
-	ID              types.Int64  `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	Seats           types.Int64  `tfsdk:"seats"`
-	FreeSeatsCount  types.Int64  `tfsdk:"free_seats_count"`
-	CategoryID      types.Int64  `tfsdk:"category_id"`
-	CompanyID       types.Int64  `tfsdk:"company_id"`
-	ManufacturerID  types.Int64  `tfsdk:"manufacturer_id"`
-	SupplierID      types.Int64  `tfsdk:"supplier_id"`
-	OrderNumber     types.String `tfsdk:"order_number"`
-	PurchaseOrder   types.String `tfsdk:"purchase_order"`
-	PurchaseDate    types.String `tfsdk:"purchase_date"`
-	ExpirationDate  types.String `tfsdk:"expiration_date"`
-	TerminationDate types.String `tfsdk:"termination_date"`
-	LicenseName     types.String `tfsdk:"license_name"`
-	LicenseEmail    types.String `tfsdk:"license_email"`
-	Serial          types.String `tfsdk:"serial"`
-	Reassignable    types.Bool   `tfsdk:"reassignable"`
-	Maintained      types.Bool   `tfsdk:"maintained"`
-	Notes           types.String `tfsdk:"notes"`
+	ID              types.Int64       `tfsdk:"id"`
+	Name            types.String      `tfsdk:"name"`
+	Seats           types.Int64       `tfsdk:"seats"`
+	FreeSeatsCount  types.Int64       `tfsdk:"free_seats_count"`
+	CategoryID      types.Int64       `tfsdk:"category_id"`
+	CompanyID       types.Int64       `tfsdk:"company_id"`
+	ManufacturerID  types.Int64       `tfsdk:"manufacturer_id"`
+	SupplierID      types.Int64       `tfsdk:"supplier_id"`
+	OrderNumber     types.String      `tfsdk:"order_number"`
+	PurchaseOrder   types.String      `tfsdk:"purchase_order"`
+	PurchaseDate    types.String      `tfsdk:"purchase_date"`
+	ExpirationDate  types.String      `tfsdk:"expiration_date"`
+	TerminationDate types.String      `tfsdk:"termination_date"`
+	LicenseName     types.String      `tfsdk:"license_name"`
+	LicenseEmail    types.String      `tfsdk:"license_email"`
+	Serial          types.String      `tfsdk:"serial"`
+	Reassignable    types.Bool        `tfsdk:"reassignable"`
+	Maintained      types.Bool        `tfsdk:"maintained"`
+	Notes           types.String      `tfsdk:"notes"`
+	PurchaseCost    tfutil.MoneyValue `tfsdk:"purchase_cost"`
 }
 
 func (d *LicenseDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -89,6 +90,7 @@ func (d *LicenseDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 			"reassignable":     schema.BoolAttribute{MarkdownDescription: "Whether seats can be reassigned.", Computed: true},
 			"maintained":       schema.BoolAttribute{MarkdownDescription: "Whether the license is maintained.", Computed: true},
 			"notes":            schema.StringAttribute{MarkdownDescription: "Free-form notes.", Computed: true},
+			"purchase_cost":    tfutil.DSMoney("Purchase cost as a plain decimal string."),
 		},
 	}
 }
@@ -164,6 +166,7 @@ func (d *LicenseDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	data.Reassignable = types.BoolValue(bool(api.Reassignable))
 	data.Maintained = types.BoolValue(bool(api.Maintained))
 	data.Notes = tfutil.StateStringPtr(api.Notes)
+	data.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

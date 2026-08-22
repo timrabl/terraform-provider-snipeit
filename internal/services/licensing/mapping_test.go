@@ -183,3 +183,24 @@ func TestSeatAssignmentBodyAlwaysCarriesBothKeys(t *testing.T) {
 		t.Errorf("asset_id must be present and nil, got %v (present=%v)", v, ok)
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestLicenseFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api licensingapi.License
+	if err := json.Unmarshal([]byte(`{"id": 4, "name": "z", "seats": 1, "notes": "", "order_number": null}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m LicenseResourceModel
+	m.Notes = types.StringValue("")
+	m.OrderNumber = types.StringNull()
+	m.fromAPI(&api)
+	if m.Notes.IsNull() || m.Notes.ValueString() != "" {
+		t.Errorf("explicit empty notes lost: %v", m.Notes)
+	}
+	if !m.OrderNumber.IsNull() {
+		t.Errorf("unset order_number should stay null: %v", m.OrderNumber)
+	}
+}

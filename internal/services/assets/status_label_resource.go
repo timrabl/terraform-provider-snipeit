@@ -123,10 +123,10 @@ func (m *StatusLabelResourceModel) fromAPI(api *assetsapi.StatusLabel) {
 	m.ID = types.Int64Value(api.Id)
 	m.Name = types.StringValue(api.Name)
 	m.Type = types.StringValue(strings.ToLower(api.Type))
-	m.Color = tfutil.StateStringPtr(api.Color)
+	m.Color = tfutil.StateStringPtrKeep(api.Color, m.Color)
 	m.ShowInNav = types.BoolValue(bool(api.ShowInNav))
 	m.DefaultLabel = types.BoolValue(bool(api.DefaultLabel))
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 }
 
 func (r *StatusLabelResource) read(ctx context.Context, id int64, data *StatusLabelResourceModel) error {

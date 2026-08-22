@@ -113,12 +113,12 @@ func (m *ManufacturerResourceModel) toBody() map[string]any {
 func (m *ManufacturerResourceModel) fromAPI(api *assetsapi.Manufacturer) {
 	m.ID = types.Int64Value(api.Id)
 	m.Name = types.StringValue(api.Name)
-	m.URL = tfutil.StateString(api.Url)
-	m.SupportURL = tfutil.StateString(api.SupportUrl)
-	m.WarrantyLookupURL = tfutil.StateString(api.WarrantyLookupUrl)
-	m.SupportPhone = tfutil.StateString(api.SupportPhone)
-	m.SupportEmail = tfutil.StateString(api.SupportEmail)
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.URL = tfutil.StateStringKeep(api.Url, m.URL)
+	m.SupportURL = tfutil.StateStringKeep(api.SupportUrl, m.SupportURL)
+	m.WarrantyLookupURL = tfutil.StateStringKeep(api.WarrantyLookupUrl, m.WarrantyLookupURL)
+	m.SupportPhone = tfutil.StateStringKeep(api.SupportPhone, m.SupportPhone)
+	m.SupportEmail = tfutil.StateStringKeep(api.SupportEmail, m.SupportEmail)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 }
 
 func (r *ManufacturerResource) read(ctx context.Context, id int64, data *ManufacturerResourceModel) error {

@@ -141,7 +141,7 @@ func (m *MaintenanceResourceModel) fromAPI(api *operationsapi.Maintenance) {
 	m.Title = types.StringValue(api.Title)
 	m.IsWarranty = types.BoolValue(bool(api.IsWarranty))
 	m.Cost = tfutil.StateMoneyPtr(api.Cost)
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 	if api.StartDate != nil && api.StartDate.Date != "" {
 		m.StartDate = types.StringValue(api.StartDate.Date)
 	} else {

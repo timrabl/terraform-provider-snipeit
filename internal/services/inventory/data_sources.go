@@ -19,12 +19,13 @@ import (
 
 // AccessoryDataSourceModel describes the snipeit_accessory data source model.
 type AccessoryDataSourceModel struct {
-	ID          types.Int64  `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	CategoryID  types.Int64  `tfsdk:"category_id"`
-	Qty         types.Int64  `tfsdk:"qty"`
-	ModelNumber types.String `tfsdk:"model_number"`
-	Notes       types.String `tfsdk:"notes"`
+	ID           types.Int64       `tfsdk:"id"`
+	Name         types.String      `tfsdk:"name"`
+	CategoryID   types.Int64       `tfsdk:"category_id"`
+	Qty          types.Int64       `tfsdk:"qty"`
+	ModelNumber  types.String      `tfsdk:"model_number"`
+	Notes        types.String      `tfsdk:"notes"`
+	PurchaseCost tfutil.MoneyValue `tfsdk:"purchase_cost"`
 }
 
 // NewAccessoryDataSource returns a new snipeit_accessory data source.
@@ -35,12 +36,13 @@ func NewAccessoryDataSource() datasource.DataSource {
 		Schema: dsschema.Schema{
 			MarkdownDescription: "Looks up a single accessory by `id` or exact `name`.",
 			Attributes: map[string]dsschema.Attribute{
-				"id":           tfutil.DSID("accessory"),
-				"name":         tfutil.DSLookupString("Exact name of the accessory. Set it to look up by name."),
-				"category_id":  tfutil.DSInt64("Id of the category."),
-				"qty":          tfutil.DSInt64("Total quantity."),
-				"model_number": tfutil.DSString("Manufacturer model number."),
-				"notes":        tfutil.DSString("Free-form notes."),
+				"id":            tfutil.DSID("accessory"),
+				"name":          tfutil.DSLookupString("Exact name of the accessory. Set it to look up by name."),
+				"category_id":   tfutil.DSInt64("Id of the category."),
+				"qty":           tfutil.DSInt64("Total quantity."),
+				"model_number":  tfutil.DSString("Manufacturer model number."),
+				"notes":         tfutil.DSString("Free-form notes."),
+				"purchase_cost": tfutil.DSMoney("Purchase cost as a plain decimal string."),
 			},
 		},
 		IDOf: func(m *AccessoryDataSourceModel) types.Int64 { return m.ID },
@@ -56,6 +58,7 @@ func NewAccessoryDataSource() datasource.DataSource {
 			m.Qty = types.Int64Value(int64(api.Qty))
 			m.ModelNumber = tfutil.StateStringPtr(api.ModelNumber)
 			m.Notes = tfutil.StateStringPtr(api.Notes)
+			m.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 			return nil
 		},
 	})
@@ -63,12 +66,13 @@ func NewAccessoryDataSource() datasource.DataSource {
 
 // ConsumableDataSourceModel describes the snipeit_consumable data source model.
 type ConsumableDataSourceModel struct {
-	ID         types.Int64  `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	CategoryID types.Int64  `tfsdk:"category_id"`
-	Qty        types.Int64  `tfsdk:"qty"`
-	ItemNo     types.String `tfsdk:"item_no"`
-	Notes      types.String `tfsdk:"notes"`
+	ID           types.Int64       `tfsdk:"id"`
+	Name         types.String      `tfsdk:"name"`
+	CategoryID   types.Int64       `tfsdk:"category_id"`
+	Qty          types.Int64       `tfsdk:"qty"`
+	ItemNo       types.String      `tfsdk:"item_no"`
+	Notes        types.String      `tfsdk:"notes"`
+	PurchaseCost tfutil.MoneyValue `tfsdk:"purchase_cost"`
 }
 
 // NewConsumableDataSource returns a new snipeit_consumable data source.
@@ -79,12 +83,13 @@ func NewConsumableDataSource() datasource.DataSource {
 		Schema: dsschema.Schema{
 			MarkdownDescription: "Looks up a single consumable by `id` or exact `name`.",
 			Attributes: map[string]dsschema.Attribute{
-				"id":          tfutil.DSID("consumable"),
-				"name":        tfutil.DSLookupString("Exact name of the consumable. Set it to look up by name."),
-				"category_id": tfutil.DSInt64("Id of the category."),
-				"qty":         tfutil.DSInt64("Total quantity."),
-				"item_no":     tfutil.DSString("Item number."),
-				"notes":       tfutil.DSString("Free-form notes."),
+				"id":            tfutil.DSID("consumable"),
+				"name":          tfutil.DSLookupString("Exact name of the consumable. Set it to look up by name."),
+				"category_id":   tfutil.DSInt64("Id of the category."),
+				"qty":           tfutil.DSInt64("Total quantity."),
+				"item_no":       tfutil.DSString("Item number."),
+				"notes":         tfutil.DSString("Free-form notes."),
+				"purchase_cost": tfutil.DSMoney("Purchase cost as a plain decimal string."),
 			},
 		},
 		IDOf: func(m *ConsumableDataSourceModel) types.Int64 { return m.ID },
@@ -100,6 +105,7 @@ func NewConsumableDataSource() datasource.DataSource {
 			m.Qty = types.Int64Value(int64(api.Qty))
 			m.ItemNo = tfutil.StateStringPtr(api.ItemNo)
 			m.Notes = tfutil.StateStringPtr(api.Notes)
+			m.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 			return nil
 		},
 	})
@@ -107,12 +113,13 @@ func NewConsumableDataSource() datasource.DataSource {
 
 // ComponentDataSourceModel describes the snipeit_component data source model.
 type ComponentDataSourceModel struct {
-	ID         types.Int64  `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	CategoryID types.Int64  `tfsdk:"category_id"`
-	Qty        types.Int64  `tfsdk:"qty"`
-	Serial     types.String `tfsdk:"serial"`
-	Notes      types.String `tfsdk:"notes"`
+	ID           types.Int64       `tfsdk:"id"`
+	Name         types.String      `tfsdk:"name"`
+	CategoryID   types.Int64       `tfsdk:"category_id"`
+	Qty          types.Int64       `tfsdk:"qty"`
+	Serial       types.String      `tfsdk:"serial"`
+	Notes        types.String      `tfsdk:"notes"`
+	PurchaseCost tfutil.MoneyValue `tfsdk:"purchase_cost"`
 }
 
 // NewComponentDataSource returns a new snipeit_component data source.
@@ -123,12 +130,13 @@ func NewComponentDataSource() datasource.DataSource {
 		Schema: dsschema.Schema{
 			MarkdownDescription: "Looks up a single component by `id` or exact `name`.",
 			Attributes: map[string]dsschema.Attribute{
-				"id":          tfutil.DSID("component"),
-				"name":        tfutil.DSLookupString("Exact name of the component. Set it to look up by name."),
-				"category_id": tfutil.DSInt64("Id of the category."),
-				"qty":         tfutil.DSInt64("Total quantity."),
-				"serial":      tfutil.DSString("Serial number."),
-				"notes":       tfutil.DSString("Free-form notes."),
+				"id":            tfutil.DSID("component"),
+				"name":          tfutil.DSLookupString("Exact name of the component. Set it to look up by name."),
+				"category_id":   tfutil.DSInt64("Id of the category."),
+				"qty":           tfutil.DSInt64("Total quantity."),
+				"serial":        tfutil.DSString("Serial number."),
+				"notes":         tfutil.DSString("Free-form notes."),
+				"purchase_cost": tfutil.DSMoney("Purchase cost as a plain decimal string."),
 			},
 		},
 		IDOf: func(m *ComponentDataSourceModel) types.Int64 { return m.ID },
@@ -144,6 +152,7 @@ func NewComponentDataSource() datasource.DataSource {
 			m.Qty = types.Int64Value(int64(api.Qty))
 			m.Serial = tfutil.StateStringPtr(api.Serial)
 			m.Notes = tfutil.StateStringPtr(api.Notes)
+			m.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 			return nil
 		},
 	})

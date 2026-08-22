@@ -104,7 +104,7 @@ func (m *DepartmentResourceModel) fromAPI(api *organizationapi.Department) {
 	m.CompanyID = tfutil.StateRefID(api.Company)
 	m.ManagerID = tfutil.StateRefID(api.Manager)
 	m.LocationID = tfutil.StateRefID(api.Location)
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 }
 
 func (r *DepartmentResource) read(ctx context.Context, id int64, data *DepartmentResourceModel) error {

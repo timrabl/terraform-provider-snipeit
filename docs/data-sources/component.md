@@ -30,5 +30,6 @@ data "snipeit_component" "ddr5" {
 
 - `category_id` (Number) Id of the category.
 - `notes` (String) Free-form notes.
+- `purchase_cost` (String) Purchase cost as a plain decimal string.
 - `qty` (Number) Total quantity.
 - `serial` (String) Serial number.

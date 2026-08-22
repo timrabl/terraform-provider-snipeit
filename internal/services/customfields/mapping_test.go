@@ -155,3 +155,20 @@ func TestSplitFieldAssociationID(t *testing.T) {
 		}
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestFieldFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api customfieldsapi.Field
+	if err := json.Unmarshal([]byte(`{"id": 6, "name": "z", "type": "text", "field_values": ""}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m FieldResourceModel
+	m.FieldValues = types.StringValue("")
+	m.fromAPI(&api)
+	if m.FieldValues.IsNull() || m.FieldValues.ValueString() != "" {
+		t.Errorf("explicit empty field_values lost: %v", m.FieldValues)
+	}
+}

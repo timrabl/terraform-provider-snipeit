@@ -280,3 +280,28 @@ func TestHardwareToBodyMoneySemantics(t *testing.T) {
 		t.Errorf("null purchase_cost must be sent as explicit null, got %v (present=%v)", v, ok)
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestModelFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api assetsapi.Model
+	if err := json.Unmarshal([]byte(`{"id": 5, "name": "z", "eol": 0, "model_number": ""}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m ModelResourceModel
+	m.EOL = types.Int64Value(0)           // explicit 0 in config
+	m.ModelNumber = types.StringValue("") // explicit "" in config
+	m.Notes = types.StringNull()
+	m.fromAPI(&api)
+	if m.EOL.IsNull() || m.EOL.ValueInt64() != 0 {
+		t.Errorf("explicit eol=0 lost: %v", m.EOL)
+	}
+	if m.ModelNumber.IsNull() || m.ModelNumber.ValueString() != "" {
+		t.Errorf("explicit empty model_number lost: %v", m.ModelNumber)
+	}
+	if !m.Notes.IsNull() {
+		t.Errorf("unset notes should stay null: %v", m.Notes)
+	}
+}

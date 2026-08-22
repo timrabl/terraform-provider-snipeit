@@ -101,10 +101,10 @@ func (m *CompanyResourceModel) toBody() map[string]any {
 func (m *CompanyResourceModel) fromAPI(api *organizationapi.Company) {
 	m.ID = types.Int64Value(api.Id)
 	m.Name = types.StringValue(api.Name)
-	m.Phone = tfutil.StateStringPtr(api.Phone)
-	m.Fax = tfutil.StateStringPtr(api.Fax)
-	m.Email = tfutil.StateStringPtr(api.Email)
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Phone = tfutil.StateStringPtrKeep(api.Phone, m.Phone)
+	m.Fax = tfutil.StateStringPtrKeep(api.Fax, m.Fax)
+	m.Email = tfutil.StateStringPtrKeep(api.Email, m.Email)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 }
 
 func (r *CompanyResource) read(ctx context.Context, id int64, data *CompanyResourceModel) error {

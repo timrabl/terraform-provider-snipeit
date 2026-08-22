@@ -131,14 +131,14 @@ func (m *ModelResourceModel) toBody() map[string]any {
 func (m *ModelResourceModel) fromAPI(api *assetsapi.Model) {
 	m.ID = types.Int64Value(api.Id)
 	m.Name = types.StringValue(api.Name)
-	m.ModelNumber = tfutil.StateStringPtr(api.ModelNumber)
+	m.ModelNumber = tfutil.StateStringPtrKeep(api.ModelNumber, m.ModelNumber)
 	m.CategoryID = types.Int64Value(api.Category.IDOrZero())
 	m.ManufacturerID = tfutil.StateRefID(api.Manufacturer)
 	m.FieldsetID = tfutil.StateRefID(api.Fieldset)
-	m.EOL = tfutil.StateOptInt(int64(api.Eol))
-	m.MinAmt = tfutil.StateOptInt(int64(api.MinAmt))
+	m.EOL = tfutil.StateOptIntKeep(int64(api.Eol), m.EOL)
+	m.MinAmt = tfutil.StateOptIntKeep(int64(api.MinAmt), m.MinAmt)
 	m.Requestable = types.BoolValue(bool(api.Requestable))
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 }
 
 func (r *ModelResource) read(ctx context.Context, id int64, data *ModelResourceModel) error {

@@ -38,5 +38,6 @@ data "snipeit_hardware" "by_serial" {
 - `model_id` (Number) Id of the asset model.
 - `name` (String) Display name of the asset.
 - `notes` (String) Free-form notes.
+- `purchase_cost` (String) Purchase cost as a plain decimal string.
 - `purchase_date` (String) Purchase date (`YYYY-MM-DD`).
 - `status_id` (Number) Id of the status label.

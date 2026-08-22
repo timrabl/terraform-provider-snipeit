@@ -253,3 +253,26 @@ func TestGroupToBodyOmitsNullPermissions(t *testing.T) {
 		t.Errorf("null permissions must be omitted (server keeps stored map)")
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestUserFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api peopleapi.User
+	if err := json.Unmarshal([]byte(`{"id": 9, "username": "z", "first_name": "Z", "jobtitle": "", "notes": null}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m UserResourceModel
+	m.Jobtitle = types.StringValue("")
+	m.Notes = types.StringNull()
+	if err := m.fromAPI(context.Background(), &api); err != nil {
+		t.Fatal(err)
+	}
+	if m.Jobtitle.IsNull() || m.Jobtitle.ValueString() != "" {
+		t.Errorf("explicit empty jobtitle lost: %v", m.Jobtitle)
+	}
+	if !m.Notes.IsNull() {
+		t.Errorf("unset notes should stay null: %v", m.Notes)
+	}
+}

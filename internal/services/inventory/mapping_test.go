@@ -262,3 +262,28 @@ func TestComponentToBodyClearSemantics(t *testing.T) {
 		t.Errorf("supplier_id must be present and nil, got %v (present=%v)", v, ok)
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestAccessoryFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api inventoryapi.Accessory
+	if err := json.Unmarshal([]byte(`{"id": 2, "name": "z", "qty": 1, "min_qty": 0, "model_number": ""}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m AccessoryResourceModel
+	m.MinAmt = types.Int64Value(0)
+	m.ModelNumber = types.StringValue("")
+	m.Notes = types.StringNull()
+	m.fromAPI(&api)
+	if m.MinAmt.IsNull() || m.MinAmt.ValueInt64() != 0 {
+		t.Errorf("explicit min_amt=0 lost: %v", m.MinAmt)
+	}
+	if m.ModelNumber.IsNull() || m.ModelNumber.ValueString() != "" {
+		t.Errorf("explicit empty model_number lost: %v", m.ModelNumber)
+	}
+	if !m.Notes.IsNull() {
+		t.Errorf("unset notes should stay null: %v", m.Notes)
+	}
+}

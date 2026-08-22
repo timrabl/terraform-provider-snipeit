@@ -174,7 +174,7 @@ func (m *FieldResourceModel) fromAPI(api *customfieldsapi.Field) {
 	m.Name = types.StringValue(api.Name)
 	m.Element = types.StringValue(api.Element)
 	m.Format = types.StringValue(api.Format)
-	m.FieldValues = tfutil.StateStringPtr(api.FieldValues)
+	m.FieldValues = tfutil.StateStringPtrKeep(api.FieldValues, m.FieldValues)
 	m.DBColumnName = types.StringValue(api.DbColumnName)
 }
 
