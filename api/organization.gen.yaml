@@ -1,0 +1,7 @@
+# oapi-codegen config for the organization domain (models only).
+package: organizationapi
+output: internal/api/organization/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true
