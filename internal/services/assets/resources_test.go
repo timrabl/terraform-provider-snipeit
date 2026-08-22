@@ -346,3 +346,76 @@ data "snipeit_model" "test" {
 		},
 	})
 }
+
+// Explicit zero values must round-trip (issue #17): the post-apply plan check
+// in every step fails if the provider maps them back to null.
+func TestAccModelResourceExplicitZeroEOL(t *testing.T) {
+	prefix := acctest.RandomWithPrefix("zv-model")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acc.PreCheck(t) },
+		ProtoV6ProviderFactories: acc.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: acc.HardwareBaseConfig(prefix) + `
+resource "snipeit_model" "zero" {
+  name        = "` + prefix + `-zero"
+  category_id = snipeit_category.test.id
+  eol         = 0
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("snipeit_model.zero", "eol", "0"),
+				),
+			},
+			{
+				Config: acc.HardwareBaseConfig(prefix) + `
+resource "snipeit_model" "zero" {
+  name        = "` + prefix + `-zero"
+  category_id = snipeit_category.test.id
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("snipeit_model.zero", "eol"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccHardwareResourceExplicitEmptyNotes(t *testing.T) {
+	prefix := acctest.RandomWithPrefix("zv-hw")
+	tag := prefix + "-0001"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acc.PreCheck(t) },
+		ProtoV6ProviderFactories: acc.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: acc.HardwareBaseConfig(prefix) + `
+resource "snipeit_hardware" "zero" {
+  asset_tag = "` + tag + `"
+  model_id  = snipeit_model.test.id
+  status_id = snipeit_status_label.test.id
+  notes     = ""
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("snipeit_hardware.zero", "notes", ""),
+				),
+			},
+			{
+				Config: acc.HardwareBaseConfig(prefix) + `
+resource "snipeit_hardware" "zero" {
+  asset_tag = "` + tag + `"
+  model_id  = snipeit_model.test.id
+  status_id = snipeit_status_label.test.id
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckNoResourceAttr("snipeit_hardware.zero", "notes"),
+				),
+			},
+		},
+	})
+}

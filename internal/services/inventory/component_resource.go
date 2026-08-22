@@ -153,10 +153,10 @@ func (m *ComponentResourceModel) fromAPI(api *inventoryapi.Component) {
 	m.SupplierID = tfutil.StateRefID(api.Supplier)
 	m.CompanyID = tfutil.StateRefID(api.Company)
 	m.LocationID = tfutil.StateRefID(api.Location)
-	m.Serial = tfutil.StateStringPtr(api.Serial)
-	m.OrderNumber = tfutil.StateStringPtr(api.OrderNumber)
-	m.MinAmt = tfutil.StateOptInt(int64(api.MinAmt))
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Serial = tfutil.StateStringPtrKeep(api.Serial, m.Serial)
+	m.OrderNumber = tfutil.StateStringPtrKeep(api.OrderNumber, m.OrderNumber)
+	m.MinAmt = tfutil.StateOptIntKeep(int64(api.MinAmt), m.MinAmt)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 	if api.PurchaseDate != nil && api.PurchaseDate.Date != "" {
 		m.PurchaseDate = types.StringValue(api.PurchaseDate.Date)
 	} else {

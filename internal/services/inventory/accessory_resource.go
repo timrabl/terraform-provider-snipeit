@@ -160,11 +160,11 @@ func (m *AccessoryResourceModel) fromAPI(api *inventoryapi.Accessory) {
 	m.SupplierID = tfutil.StateRefID(api.Supplier)
 	m.CompanyID = tfutil.StateRefID(api.Company)
 	m.LocationID = tfutil.StateRefID(api.Location)
-	m.ModelNumber = tfutil.StateStringPtr(api.ModelNumber)
-	m.OrderNumber = tfutil.StateStringPtr(api.OrderNumber)
+	m.ModelNumber = tfutil.StateStringPtrKeep(api.ModelNumber, m.ModelNumber)
+	m.OrderNumber = tfutil.StateStringPtrKeep(api.OrderNumber, m.OrderNumber)
 	// The read serializer returns the write field min_amt as min_qty.
-	m.MinAmt = tfutil.StateOptInt(int64(api.MinQty))
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.MinAmt = tfutil.StateOptIntKeep(int64(api.MinQty), m.MinAmt)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 	if api.PurchaseDate != nil && api.PurchaseDate.Date != "" {
 		m.PurchaseDate = types.StringValue(api.PurchaseDate.Date)
 	} else {

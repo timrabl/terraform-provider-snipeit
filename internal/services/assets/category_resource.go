@@ -133,7 +133,7 @@ func (m *CategoryResourceModel) fromAPI(api *assetsapi.Category) {
 	m.ID = types.Int64Value(api.Id)
 	m.Name = types.StringValue(api.Name)
 	m.CategoryType = types.StringValue(strings.ToLower(api.CategoryType))
-	m.Notes = tfutil.StateStringPtr(api.Notes)
+	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 	m.UseDefaultEULA = types.BoolValue(bool(api.UseDefaultEula))
 	m.RequireAcceptance = types.BoolValue(bool(api.RequireAcceptance))
 	m.CheckinEmail = types.BoolValue(bool(api.CheckinEmail))

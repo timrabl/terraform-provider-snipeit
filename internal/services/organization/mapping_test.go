@@ -183,3 +183,24 @@ func TestSupplierToBodySendsAllStrings(t *testing.T) {
 		t.Errorf("unset state must be empty string, got %v", body["state"])
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestCompanyFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api organizationapi.Company
+	if err := json.Unmarshal([]byte(`{"id": 3, "name": "z", "notes": "", "phone": null}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m CompanyResourceModel
+	m.Notes = types.StringValue("") // explicit in config/plan
+	m.Phone = types.StringNull()    // unset in config
+	m.fromAPI(&api)
+	if m.Notes.IsNull() || m.Notes.ValueString() != "" {
+		t.Errorf("explicit empty notes lost: %v", m.Notes)
+	}
+	if !m.Phone.IsNull() {
+		t.Errorf("unset phone should stay null: %v", m.Phone)
+	}
+}

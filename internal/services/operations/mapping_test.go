@@ -148,3 +148,20 @@ func TestAuditListDecode(t *testing.T) {
 		t.Errorf("audit list = %+v", list)
 	}
 }
+
+// Explicitly configured zero values must survive the read-back mapping
+// (issue #17): the API serializes unset and explicit ""/0 identically, so
+// the mappers keep the prior explicit zero and only fall back to null when
+// the prior was null.
+func TestMaintenanceFromAPIKeepsExplicitZeroValues(t *testing.T) {
+	var api operationsapi.Maintenance
+	if err := json.Unmarshal([]byte(`{"id": 8, "title": "z", "notes": ""}`), &api); err != nil {
+		t.Fatal(err)
+	}
+	var m MaintenanceResourceModel
+	m.Notes = types.StringValue("")
+	m.fromAPI(&api)
+	if m.Notes.IsNull() || m.Notes.ValueString() != "" {
+		t.Errorf("explicit empty notes lost: %v", m.Notes)
+	}
+}

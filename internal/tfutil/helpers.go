@@ -140,3 +140,47 @@ func StateOptInt(n int64) types.Int64 {
 	}
 	return types.Int64Value(n)
 }
+
+// --- prior-aware state mappers ---------------------------------------------
+//
+// Snipe-IT serializes unset and explicitly-zero values identically ("" / 0),
+// so the zero-collapsing mappers above cannot tell "user configured the zero
+// value" from "attribute is unset". These variants keep the explicit zero
+// when the prior value (plan in Create/Update, state in Read) was exactly
+// that; in every other case they behave like their plain counterparts.
+
+// StateStringKeep maps an API string to state, preserving an explicitly
+// configured empty string.
+func StateStringKeep(s string, prior types.String) types.String {
+	if s == "" {
+		if !prior.IsNull() && !prior.IsUnknown() && prior.ValueString() == "" {
+			return types.StringValue("")
+		}
+		return types.StringNull()
+	}
+	return types.StringValue(s)
+}
+
+// StateStringPtrKeep maps a nullable API string to state, preserving an
+// explicitly configured empty string.
+func StateStringPtrKeep(s *string, prior types.String) types.String {
+	if s == nil || *s == "" {
+		if !prior.IsNull() && !prior.IsUnknown() && prior.ValueString() == "" {
+			return types.StringValue("")
+		}
+		return types.StringNull()
+	}
+	return types.StringValue(*s)
+}
+
+// StateOptIntKeep maps an integer to state, preserving an explicitly
+// configured zero.
+func StateOptIntKeep(n int64, prior types.Int64) types.Int64 {
+	if n == 0 {
+		if !prior.IsNull() && !prior.IsUnknown() && prior.ValueInt64() == 0 {
+			return types.Int64Value(0)
+		}
+		return types.Int64Null()
+	}
+	return types.Int64Value(n)
+}
