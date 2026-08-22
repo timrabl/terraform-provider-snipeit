@@ -60,6 +60,7 @@ resource "snipeit_hardware" "mbp" {
 - `name` (String) Display name of the asset.
 - `notes` (String) Free-form notes.
 - `order_number` (String) Order number of the purchase.
+- `purchase_cost` (String) Purchase cost as a decimal string, e.g. `1234.50`. Stored normalized; `1234.5`, `1234.50` and `1,234.50` are the same value.
 - `purchase_date` (String) Purchase date in `YYYY-MM-DD` format.
 - `requestable` (Boolean) Whether this asset can be requested by users.
 - `serial` (String) Serial number of the asset.

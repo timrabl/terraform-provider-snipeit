@@ -39,15 +39,16 @@ type MaintenanceResource struct {
 
 // MaintenanceResourceModel describes the resource data model.
 type MaintenanceResourceModel struct {
-	ID             types.Int64  `tfsdk:"id"`
-	AssetID        types.Int64  `tfsdk:"asset_id"`
-	SupplierID     types.Int64  `tfsdk:"supplier_id"`
-	Type           types.String `tfsdk:"maintenance_type"`
-	Title          types.String `tfsdk:"title"`
-	StartDate      types.String `tfsdk:"start_date"`
-	CompletionDate types.String `tfsdk:"completion_date"`
-	IsWarranty     types.Bool   `tfsdk:"is_warranty"`
-	Notes          types.String `tfsdk:"notes"`
+	ID             types.Int64       `tfsdk:"id"`
+	AssetID        types.Int64       `tfsdk:"asset_id"`
+	SupplierID     types.Int64       `tfsdk:"supplier_id"`
+	Type           types.String      `tfsdk:"maintenance_type"`
+	Title          types.String      `tfsdk:"title"`
+	StartDate      types.String      `tfsdk:"start_date"`
+	CompletionDate types.String      `tfsdk:"completion_date"`
+	IsWarranty     types.Bool        `tfsdk:"is_warranty"`
+	Cost           tfutil.MoneyValue `tfsdk:"cost"`
+	Notes          types.String      `tfsdk:"notes"`
 }
 
 func (r *MaintenanceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -97,6 +98,12 @@ func (r *MaintenanceResource) Schema(ctx context.Context, req resource.SchemaReq
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
+			"cost": schema.StringAttribute{
+				MarkdownDescription: "Maintenance cost as a decimal string, e.g. `1500.50`. " +
+					"Stored normalized; `1500.5`, `1500.50` and `1,500.50` are the same value.",
+				CustomType: tfutil.MoneyType{},
+				Optional:   true,
+			},
 			"notes": schema.StringAttribute{
 				MarkdownDescription: "Free-form notes.",
 				Optional:            true,
@@ -122,6 +129,7 @@ func (m *MaintenanceResourceModel) toBody() map[string]any {
 	tfutil.BodyNullableString(body, "completion_date", m.CompletionDate)
 	tfutil.BodyString(body, "notes", m.Notes)
 	tfutil.BodyOptBool(body, "is_warranty", m.IsWarranty)
+	tfutil.BodyMoney(body, "cost", m.Cost)
 	return body
 }
 
@@ -132,6 +140,7 @@ func (m *MaintenanceResourceModel) fromAPI(api *operationsapi.Maintenance) {
 	m.Type = types.StringValue(api.AssetMaintenanceType)
 	m.Title = types.StringValue(api.Title)
 	m.IsWarranty = types.BoolValue(bool(api.IsWarranty))
+	m.Cost = tfutil.StateMoneyPtr(api.Cost)
 	m.Notes = tfutil.StateStringPtr(api.Notes)
 	if api.StartDate != nil && api.StartDate.Date != "" {
 		m.StartDate = types.StringValue(api.StartDate.Date)

@@ -28,8 +28,9 @@ info:
     null, omitted keys keep the server value). Write-mapping notes:
     - hardware's default location is WRITTEN as rtd_location_id but READ as
       the rtd_location nested reference.
-    - purchase_cost is deliberately unmodeled everywhere: the API returns it
-      locale-formatted and it cannot round-trip stably.
+    - purchase_cost is returned locale-formatted ("1,234.50"); the provider
+      normalizes on read and writes plain decimals only (comma-formatted
+      input makes the API answer with a redirect).
 servers:
   - url: /api/v1
 tags:
@@ -426,6 +427,9 @@ components:
         supplier: { $ref: "#/components/schemas/NestedRef" }
         rtd_location: { $ref: "#/components/schemas/NestedRef" }
         purchase_date: { $ref: "#/components/schemas/NestedDate" }
+        # Locale-formatted on read ("1,234.50"); the provider normalizes and
+        # writes plain decimals only (comma input crashes the API with a 302).
+        purchase_cost: { type: string, nullable: true }
         # Set when the asset was soft-deleted; GET keeps returning trashed
         # assets, so a non-null value means the object is effectively gone.
         deleted_at: { $ref: "#/components/schemas/NestedDateTime" }

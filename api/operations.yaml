@@ -172,6 +172,9 @@ components:
           $ref: "#/components/schemas/NestedDate"
         is_warranty:
           $ref: "#/components/schemas/FlexBool"
+        # Locale-formatted on read ("1,500.50"); the provider normalizes and
+        # writes plain decimals only.
+        cost: { type: string, nullable: true }
         notes: { type: string, nullable: true }
     MaintenanceList:
       type: object

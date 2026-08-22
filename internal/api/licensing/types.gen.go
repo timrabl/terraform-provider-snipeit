@@ -43,7 +43,8 @@ type License struct {
 	OrderNumber  *string    `json:"order_number,omitempty"`
 
 	// ProductKey GET-side name of the write field `serial`.
-	ProductKey *string `json:"product_key,omitempty"`
+	ProductKey   *string `json:"product_key,omitempty"`
+	PurchaseCost *string `json:"purchase_cost,omitempty"`
 
 	// PurchaseDate Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.
 	PurchaseDate  *DateObject `json:"purchase_date,omitempty"`

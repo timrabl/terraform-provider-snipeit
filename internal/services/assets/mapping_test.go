@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	assetsapi "github.com/timrabl/terraform-provider-snipeit/internal/api/assets"
+	"github.com/timrabl/terraform-provider-snipeit/internal/tfutil"
 )
 
 const manufacturerFixture = `{
@@ -146,6 +147,7 @@ func TestModelFromAPI(t *testing.T) {
 const hardwareFixture = `{
 	"id": 42,
 	"asset_tag": "IT-0042",
+	"purchase_cost": "1,234.50",
 	"name": "",
 	"serial": "C02XXXXXXX",
 	"order_number": null,
@@ -180,6 +182,9 @@ func TestHardwareFromAPI(t *testing.T) {
 	}
 	if m.Serial.ValueString() != "C02XXXXXXX" {
 		t.Errorf("serial = %v", m.Serial)
+	}
+	if m.PurchaseCost.ValueString() != "1234.50" {
+		t.Errorf("purchase_cost should be normalized, got %v", m.PurchaseCost)
 	}
 	// absent ref and zero ref both -> null.
 	if !m.CompanyID.IsNull() || !m.SupplierID.IsNull() {
@@ -256,5 +261,22 @@ func TestModelToBodyClearSemantics(t *testing.T) {
 	}
 	if v, ok := body["eol"]; !ok || v != nil {
 		t.Errorf("eol must be present and nil, got %v (present=%v)", v, ok)
+	}
+}
+
+func TestHardwareToBodyMoneySemantics(t *testing.T) {
+	var m HardwareResourceModel
+	m.AssetTag = types.StringValue("X-1")
+	m.ModelID = types.Int64Value(1)
+	m.StatusID = types.Int64Value(2)
+	m.PurchaseCost = tfutil.NewMoneyValue("1,234.50")
+	body := m.toBody()
+	if body["purchase_cost"] != "1234.50" {
+		t.Errorf("purchase_cost must be sent normalized, got %v", body["purchase_cost"])
+	}
+	m.PurchaseCost = tfutil.NewMoneyNull()
+	body = m.toBody()
+	if v, ok := body["purchase_cost"]; !ok || v != nil {
+		t.Errorf("null purchase_cost must be sent as explicit null, got %v (present=%v)", v, ok)
 	}
 }

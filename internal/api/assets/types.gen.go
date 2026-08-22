@@ -51,10 +51,11 @@ type Hardware struct {
 	Id        int64           `json:"id"`
 
 	// Model Nested related-object reference, e.g. {"id": 3, "name": "X"}.
-	Model       *NestedRef `json:"model,omitempty"`
-	Name        *string    `json:"name,omitempty"`
-	Notes       *string    `json:"notes,omitempty"`
-	OrderNumber *string    `json:"order_number,omitempty"`
+	Model        *NestedRef `json:"model,omitempty"`
+	Name         *string    `json:"name,omitempty"`
+	Notes        *string    `json:"notes,omitempty"`
+	OrderNumber  *string    `json:"order_number,omitempty"`
+	PurchaseCost *string    `json:"purchase_cost,omitempty"`
 
 	// PurchaseDate Nested date, e.g. {"date": "2026-01-15", "formatted": "..."}.
 	PurchaseDate *NestedDate `json:"purchase_date,omitempty"`

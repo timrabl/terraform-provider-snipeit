@@ -198,6 +198,7 @@ resource "snipeit_hardware" "test" {
   name          = "Test Asset"
   serial        = "SN-%s"
   purchase_date = "2026-01-15"
+  purchase_cost = "1234.50"
 }
 `, tag, prefix),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -205,6 +206,7 @@ resource "snipeit_hardware" "test" {
 					resource.TestCheckResourceAttr("snipeit_hardware.test", "name", "Test Asset"),
 					resource.TestCheckResourceAttr("snipeit_hardware.test", "serial", "SN-"+prefix),
 					resource.TestCheckResourceAttr("snipeit_hardware.test", "purchase_date", "2026-01-15"),
+					resource.TestCheckResourceAttr("snipeit_hardware.test", "purchase_cost", "1234.50"),
 					resource.TestCheckResourceAttrPair(
 						"snipeit_hardware.test", "model_id",
 						"snipeit_model.test", "id",
@@ -220,6 +222,23 @@ resource "snipeit_hardware" "test" {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			// Comma-formatted input is legal config and semantically stable.
+			{
+				Config: acc.HardwareBaseConfig(prefix) + fmt.Sprintf(`
+resource "snipeit_hardware" "test" {
+  asset_tag     = %q
+  model_id      = snipeit_model.test.id
+  status_id     = snipeit_status_label.test.id
+  name          = "Test Asset"
+  serial        = "SN-%s"
+  purchase_date = "2026-01-15"
+  purchase_cost = "1,499.90"
+}
+`, tag, prefix),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("snipeit_hardware.test", "purchase_cost", "1,499.90"),
+				),
+			},
 			{
 				Config: acc.HardwareBaseConfig(prefix) + fmt.Sprintf(`
 resource "snipeit_hardware" "test" {
@@ -234,6 +253,7 @@ resource "snipeit_hardware" "test" {
 					resource.TestCheckResourceAttr("snipeit_hardware.test", "name", "Test Asset Renamed"),
 					resource.TestCheckResourceAttr("snipeit_hardware.test", "notes", "updated by acceptance test"),
 					resource.TestCheckNoResourceAttr("snipeit_hardware.test", "serial"),
+					resource.TestCheckNoResourceAttr("snipeit_hardware.test", "purchase_cost"),
 				),
 			},
 		},

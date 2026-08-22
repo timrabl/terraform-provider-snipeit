@@ -47,6 +47,7 @@ resource "snipeit_maintenance" "test" {
   maintenance_type = "Maintenance"
   title            = "Annual service"
   start_date       = "2026-08-01"
+  cost             = "1500.50"
   completion_date  = "2026-08-10"
   notes            = "created by acceptance test"
 }
@@ -55,6 +56,7 @@ resource "snipeit_maintenance" "test" {
 					resource.TestCheckResourceAttr("snipeit_maintenance.test", "maintenance_type", "Maintenance"),
 					resource.TestCheckResourceAttr("snipeit_maintenance.test", "title", "Annual service"),
 					resource.TestCheckResourceAttr("snipeit_maintenance.test", "start_date", "2026-08-01"),
+					resource.TestCheckResourceAttr("snipeit_maintenance.test", "cost", "1500.50"),
 					resource.TestCheckResourceAttr("snipeit_maintenance.test", "completion_date", "2026-08-10"),
 					resource.TestCheckResourceAttrPair(
 						"snipeit_maintenance.test", "asset_id",

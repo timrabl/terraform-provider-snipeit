@@ -87,7 +87,6 @@ noted otherwise.
 | `/hardware/{id}/restore`, `/users/{id}/restore` | Soft-delete restore is an action, not a desired state |
 | `POST /hardware/audit` | Audit submission is an event, not a resource |
 | File attachment upload/download | Binary blobs don't round-trip through state sanely |
-| `purchase_cost` / `cost` everywhere | The API returns them locale-formatted, they cannot round-trip stably |
 
 ## Snipe-IT API quirks this provider handles
 

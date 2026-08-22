@@ -325,6 +325,9 @@ components:
         model_number: { type: string, nullable: true }
         order_number: { type: string, nullable: true }
         purchase_date: { $ref: "#/components/schemas/DateObject" }
+        # Locale-formatted on read ("1,234.50"); the provider normalizes and
+        # writes plain decimals only (comma input crashes the API with a 302).
+        purchase_cost: { type: string, nullable: true }
         min_qty:
           allOf: [{ $ref: "#/components/schemas/FlexInt" }]
           description: Read-serializer name of the write field min_amt.
@@ -369,6 +372,9 @@ components:
         model_number: { type: string, nullable: true }
         order_number: { type: string, nullable: true }
         purchase_date: { $ref: "#/components/schemas/DateObject" }
+        # Locale-formatted on read ("1,234.50"); the provider normalizes and
+        # writes plain decimals only (comma input crashes the API with a 302).
+        purchase_cost: { type: string, nullable: true }
         min_amt: { $ref: "#/components/schemas/FlexInt" }
         notes: { type: string, nullable: true }
     ConsumableList:
@@ -393,6 +399,9 @@ components:
         serial: { type: string, nullable: true }
         order_number: { type: string, nullable: true }
         purchase_date: { $ref: "#/components/schemas/DateObject" }
+        # Locale-formatted on read ("1,234.50"); the provider normalizes and
+        # writes plain decimals only (comma input crashes the API with a 302).
+        purchase_cost: { type: string, nullable: true }
         min_amt: { $ref: "#/components/schemas/FlexInt" }
         notes: { type: string, nullable: true }
     ComponentList:

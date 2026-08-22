@@ -43,24 +43,25 @@ type LicenseResource struct {
 
 // LicenseResourceModel describes the resource data model.
 type LicenseResourceModel struct {
-	ID              types.Int64  `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	Seats           types.Int64  `tfsdk:"seats"`
-	CategoryID      types.Int64  `tfsdk:"category_id"`
-	CompanyID       types.Int64  `tfsdk:"company_id"`
-	ManufacturerID  types.Int64  `tfsdk:"manufacturer_id"`
-	SupplierID      types.Int64  `tfsdk:"supplier_id"`
-	OrderNumber     types.String `tfsdk:"order_number"`
-	PurchaseOrder   types.String `tfsdk:"purchase_order"`
-	PurchaseDate    types.String `tfsdk:"purchase_date"`
-	ExpirationDate  types.String `tfsdk:"expiration_date"`
-	TerminationDate types.String `tfsdk:"termination_date"`
-	LicenseName     types.String `tfsdk:"license_name"`
-	LicenseEmail    types.String `tfsdk:"license_email"`
-	Serial          types.String `tfsdk:"serial"`
-	Reassignable    types.Bool   `tfsdk:"reassignable"`
-	Maintained      types.Bool   `tfsdk:"maintained"`
-	Notes           types.String `tfsdk:"notes"`
+	ID              types.Int64       `tfsdk:"id"`
+	Name            types.String      `tfsdk:"name"`
+	Seats           types.Int64       `tfsdk:"seats"`
+	CategoryID      types.Int64       `tfsdk:"category_id"`
+	CompanyID       types.Int64       `tfsdk:"company_id"`
+	ManufacturerID  types.Int64       `tfsdk:"manufacturer_id"`
+	SupplierID      types.Int64       `tfsdk:"supplier_id"`
+	OrderNumber     types.String      `tfsdk:"order_number"`
+	PurchaseOrder   types.String      `tfsdk:"purchase_order"`
+	PurchaseDate    types.String      `tfsdk:"purchase_date"`
+	PurchaseCost    tfutil.MoneyValue `tfsdk:"purchase_cost"`
+	ExpirationDate  types.String      `tfsdk:"expiration_date"`
+	TerminationDate types.String      `tfsdk:"termination_date"`
+	LicenseName     types.String      `tfsdk:"license_name"`
+	LicenseEmail    types.String      `tfsdk:"license_email"`
+	Serial          types.String      `tfsdk:"serial"`
+	Reassignable    types.Bool        `tfsdk:"reassignable"`
+	Maintained      types.Bool        `tfsdk:"maintained"`
+	Notes           types.String      `tfsdk:"notes"`
 }
 
 func (r *LicenseResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -112,6 +113,12 @@ func (r *LicenseResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"purchase_date": schema.StringAttribute{
 				MarkdownDescription: "Purchase date in `YYYY-MM-DD` format.",
 				Optional:            true,
+			},
+			"purchase_cost": schema.StringAttribute{
+				MarkdownDescription: "Purchase cost as a decimal string, e.g. `1234.50`. " +
+					"Stored normalized; `1234.5`, `1234.50` and `1,234.50` are the same value.",
+				CustomType: tfutil.MoneyType{},
+				Optional:   true,
 			},
 			"expiration_date": schema.StringAttribute{
 				MarkdownDescription: "Expiration date in `YYYY-MM-DD` format.",
@@ -171,6 +178,7 @@ func (m *LicenseResourceModel) toBody() map[string]any {
 	tfutil.BodyString(body, "order_number", m.OrderNumber)
 	tfutil.BodyString(body, "purchase_order", m.PurchaseOrder)
 	tfutil.BodyNullableString(body, "purchase_date", m.PurchaseDate)
+	tfutil.BodyMoney(body, "purchase_cost", m.PurchaseCost)
 	tfutil.BodyNullableString(body, "expiration_date", m.ExpirationDate)
 	tfutil.BodyNullableString(body, "termination_date", m.TerminationDate)
 	tfutil.BodyString(body, "license_name", m.LicenseName)
@@ -201,6 +209,7 @@ func (m *LicenseResourceModel) fromAPI(api *licensingapi.License) {
 	m.OrderNumber = tfutil.StateStringPtr(api.OrderNumber)
 	m.PurchaseOrder = tfutil.StateStringPtr(api.PurchaseOrder)
 	m.PurchaseDate = stateDate(api.PurchaseDate)
+	m.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 	m.ExpirationDate = stateDate(api.ExpirationDate)
 	m.TerminationDate = stateDate(api.TerminationDate)
 	m.LicenseName = tfutil.StateStringPtr(api.LicenseName)

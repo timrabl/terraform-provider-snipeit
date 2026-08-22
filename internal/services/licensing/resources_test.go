@@ -43,6 +43,7 @@ resource "snipeit_license" "test" {
   license_name    = "Example Licensee"
   license_email   = "licenses@example.com"
   purchase_date   = "2026-01-10"
+  purchase_cost   = "999.90"
   expiration_date = "2027-01-10"
   order_number    = "ORD-42"
 }
@@ -51,6 +52,7 @@ resource "snipeit_license" "test" {
 					resource.TestCheckResourceAttr("snipeit_license.test", "name", prefix),
 					resource.TestCheckResourceAttr("snipeit_license.test", "seats", "3"),
 					resource.TestCheckResourceAttr("snipeit_license.test", "serial", "AAAA-BBBB-CCCC"),
+					resource.TestCheckResourceAttr("snipeit_license.test", "purchase_cost", "999.90"),
 					resource.TestCheckResourceAttr("snipeit_license.test", "purchase_date", "2026-01-10"),
 					resource.TestCheckResourceAttr("snipeit_license.test", "expiration_date", "2027-01-10"),
 					resource.TestCheckResourceAttrPair(

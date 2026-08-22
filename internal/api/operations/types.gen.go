@@ -63,6 +63,7 @@ type Maintenance struct {
 
 	// CompletionDate Nested date shape {"date": "2020-01-01", "formatted": "..."}.
 	CompletionDate *NestedDate `json:"completion_date,omitempty"`
+	Cost           *string     `json:"cost,omitempty"`
 	Id             int64       `json:"id"`
 
 	// IsWarranty Boolean the API returns as true/false, 0/1 or "0"/"1".
