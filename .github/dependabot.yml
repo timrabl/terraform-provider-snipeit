@@ -27,3 +27,8 @@ updates:
     labels: [dependencies, docker]
     commit-message:
       prefix: chore(deps)
+    # The dev stack mirrors the Snipe-IT production deployments this provider
+    # is tested against; major image bumps are a deliberate decision.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
