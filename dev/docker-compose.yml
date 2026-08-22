@@ -37,7 +37,7 @@ services:
 
   cache:
     <<: *x-restart-policy
-    image: redis:7.4.0-alpine
+    image: redis:8.10.1-alpine
 
   app:
     <<: *x-restart-policy
