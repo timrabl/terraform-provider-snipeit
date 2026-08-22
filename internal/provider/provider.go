@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/timrabl/terraform-provider-snipeit/internal/client"
+	"github.com/timrabl/terraform-provider-snipeit/internal/services/assets"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/organization"
 )
 
@@ -124,11 +125,13 @@ func (p *SnipeITProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *SnipeITProvider) Resources(ctx context.Context) []func() resource.Resource {
 	// Every resource lives in a domain package under internal/services.
 	rs := organization.Resources()
+	rs = append(rs, assets.Resources()...)
 	return rs
 }
 
 func (p *SnipeITProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	ds := organization.DataSources()
+	ds = append(ds, assets.DataSources()...)
 	return ds
 }
 
