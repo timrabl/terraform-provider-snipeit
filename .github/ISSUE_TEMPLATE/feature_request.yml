@@ -1,0 +1,26 @@
+---
+name: Feature request
+description: A resource, data source, or attribute the provider should support
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The use case, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: New resource/data source/attribute, and the Snipe-IT API endpoints involved if you know them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: API quirks you already hit, workarounds, links.
