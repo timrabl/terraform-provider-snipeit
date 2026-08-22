@@ -42,6 +42,7 @@ data "snipeit_license" "by_id" {
 - `manufacturer_id` (Number) Id of the manufacturer.
 - `notes` (String) Free-form notes.
 - `order_number` (String) Order number of the purchase.
+- `purchase_cost` (String) Purchase cost as a plain decimal string.
 - `purchase_date` (String) Purchase date (`YYYY-MM-DD`).
 - `purchase_order` (String) Purchase order number.
 - `reassignable` (Boolean) Whether seats can be reassigned.

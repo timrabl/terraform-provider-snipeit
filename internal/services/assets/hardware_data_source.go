@@ -31,16 +31,17 @@ type HardwareDataSource struct {
 
 // HardwareDataSourceModel describes the data source data model.
 type HardwareDataSourceModel struct {
-	ID           types.Int64  `tfsdk:"id"`
-	AssetTag     types.String `tfsdk:"asset_tag"`
-	Serial       types.String `tfsdk:"serial"`
-	Name         types.String `tfsdk:"name"`
-	ModelID      types.Int64  `tfsdk:"model_id"`
-	StatusID     types.Int64  `tfsdk:"status_id"`
-	CompanyID    types.Int64  `tfsdk:"company_id"`
-	LocationID   types.Int64  `tfsdk:"location_id"`
-	Notes        types.String `tfsdk:"notes"`
-	PurchaseDate types.String `tfsdk:"purchase_date"`
+	ID           types.Int64       `tfsdk:"id"`
+	AssetTag     types.String      `tfsdk:"asset_tag"`
+	Serial       types.String      `tfsdk:"serial"`
+	Name         types.String      `tfsdk:"name"`
+	ModelID      types.Int64       `tfsdk:"model_id"`
+	StatusID     types.Int64       `tfsdk:"status_id"`
+	CompanyID    types.Int64       `tfsdk:"company_id"`
+	LocationID   types.Int64       `tfsdk:"location_id"`
+	Notes        types.String      `tfsdk:"notes"`
+	PurchaseCost tfutil.MoneyValue `tfsdk:"purchase_cost"`
+	PurchaseDate types.String      `tfsdk:"purchase_date"`
 }
 
 func (d *HardwareDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -73,6 +74,7 @@ func (d *HardwareDataSource) Schema(ctx context.Context, req datasource.SchemaRe
 			"company_id":    schema.Int64Attribute{MarkdownDescription: "Id of the owning company.", Computed: true},
 			"location_id":   schema.Int64Attribute{MarkdownDescription: "Id of the default location.", Computed: true},
 			"notes":         schema.StringAttribute{MarkdownDescription: "Free-form notes.", Computed: true},
+			"purchase_cost": tfutil.DSMoney("Purchase cost as a plain decimal string."),
 			"purchase_date": schema.StringAttribute{MarkdownDescription: "Purchase date (`YYYY-MM-DD`).", Computed: true},
 		},
 	}
@@ -127,6 +129,7 @@ func (d *HardwareDataSource) Read(ctx context.Context, req datasource.ReadReques
 	data.CompanyID = tfutil.StateRefID(api.Company)
 	data.LocationID = tfutil.StateRefID(api.RtdLocation)
 	data.Notes = tfutil.StateStringPtr(api.Notes)
+	data.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 	if api.PurchaseDate != nil && api.PurchaseDate.Date != "" {
 		data.PurchaseDate = types.StringValue(api.PurchaseDate.Date)
 	} else {

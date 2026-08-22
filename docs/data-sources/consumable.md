@@ -31,4 +31,5 @@ data "snipeit_consumable" "toner" {
 - `category_id` (Number) Id of the category.
 - `item_no` (String) Item number.
 - `notes` (String) Free-form notes.
+- `purchase_cost` (String) Purchase cost as a plain decimal string.
 - `qty` (Number) Total quantity.

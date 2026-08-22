@@ -31,4 +31,5 @@ data "snipeit_accessory" "mx_keys" {
 - `category_id` (Number) Id of the category.
 - `model_number` (String) Manufacturer model number.
 - `notes` (String) Free-form notes.
+- `purchase_cost` (String) Purchase cost as a plain decimal string.
 - `qty` (Number) Total quantity.

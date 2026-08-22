@@ -175,6 +175,11 @@ func DSString(desc string) dsschema.StringAttribute {
 	return dsschema.StringAttribute{MarkdownDescription: desc, Computed: true}
 }
 
+// DSMoney is a computed money attribute (normalized decimal string).
+func DSMoney(desc string) dsschema.StringAttribute {
+	return dsschema.StringAttribute{MarkdownDescription: desc, Computed: true, CustomType: MoneyType{}}
+}
+
 // DSInt64 is a computed int64 attribute.
 func DSInt64(desc string) dsschema.Int64Attribute {
 	return dsschema.Int64Attribute{MarkdownDescription: desc, Computed: true}
