@@ -1,0 +1,28 @@
+# Local environment / credentials — never commit
+env.local
+*.env.local
+.env
+
+# Binaries
+terraform-provider-snipeit
+dist/
+
+# Terraform working files (examples, local testing)
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+crash.log
+
+# Go
+*.test
+*.out
+vendor/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# local tooling/session artifacts
+.claude/
