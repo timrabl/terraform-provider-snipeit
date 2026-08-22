@@ -22,6 +22,7 @@ import (
 
 	"github.com/timrabl/terraform-provider-snipeit/internal/client"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/assets"
+	"github.com/timrabl/terraform-provider-snipeit/internal/services/customfields"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/inventory"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/licensing"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/organization"
@@ -132,6 +133,7 @@ func (p *SnipeITProvider) Resources(ctx context.Context) []func() resource.Resou
 	rs = append(rs, people.Resources()...)
 	rs = append(rs, licensing.Resources()...)
 	rs = append(rs, inventory.Resources()...)
+	rs = append(rs, customfields.Resources()...)
 	return rs
 }
 
@@ -141,6 +143,7 @@ func (p *SnipeITProvider) DataSources(ctx context.Context) []func() datasource.D
 	ds = append(ds, people.DataSources()...)
 	ds = append(ds, licensing.DataSources()...)
 	ds = append(ds, inventory.DataSources()...)
+	ds = append(ds, customfields.DataSources()...)
 	return ds
 }
 
