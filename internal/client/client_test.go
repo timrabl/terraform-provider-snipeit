@@ -191,3 +191,26 @@ func TestGetRedirectMeansNotFound(t *testing.T) {
 		t.Fatalf("expected ErrNotFound for redirected GET, got %v", err)
 	}
 }
+
+func TestAuthErrorBodyIsFlattened(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":"Unauthorized or unauthenticated."}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	for name, err := range map[string]error{
+		"get":  c.Get(context.Background(), "/users/me", nil),
+		"post": c.Post(context.Background(), "/users", map[string]any{}, nil),
+	} {
+		var apiErr *APIError
+		if !errors.As(err, &apiErr) {
+			t.Fatalf("%s: expected APIError, got %v", name, err)
+		}
+		if apiErr.Messages != "Unauthorized or unauthenticated." {
+			t.Errorf("%s: raw body leaked into message: %q", name, apiErr.Messages)
+		}
+	}
+}
