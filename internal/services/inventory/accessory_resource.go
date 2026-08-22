@@ -38,19 +38,20 @@ type AccessoryResource struct {
 
 // AccessoryResourceModel describes the resource data model.
 type AccessoryResourceModel struct {
-	ID             types.Int64  `tfsdk:"id"`
-	Name           types.String `tfsdk:"name"`
-	Qty            types.Int64  `tfsdk:"qty"`
-	CategoryID     types.Int64  `tfsdk:"category_id"`
-	ManufacturerID types.Int64  `tfsdk:"manufacturer_id"`
-	SupplierID     types.Int64  `tfsdk:"supplier_id"`
-	CompanyID      types.Int64  `tfsdk:"company_id"`
-	LocationID     types.Int64  `tfsdk:"location_id"`
-	ModelNumber    types.String `tfsdk:"model_number"`
-	OrderNumber    types.String `tfsdk:"order_number"`
-	PurchaseDate   types.String `tfsdk:"purchase_date"`
-	MinAmt         types.Int64  `tfsdk:"min_amt"`
-	Notes          types.String `tfsdk:"notes"`
+	ID             types.Int64       `tfsdk:"id"`
+	Name           types.String      `tfsdk:"name"`
+	Qty            types.Int64       `tfsdk:"qty"`
+	CategoryID     types.Int64       `tfsdk:"category_id"`
+	ManufacturerID types.Int64       `tfsdk:"manufacturer_id"`
+	SupplierID     types.Int64       `tfsdk:"supplier_id"`
+	CompanyID      types.Int64       `tfsdk:"company_id"`
+	LocationID     types.Int64       `tfsdk:"location_id"`
+	ModelNumber    types.String      `tfsdk:"model_number"`
+	OrderNumber    types.String      `tfsdk:"order_number"`
+	PurchaseDate   types.String      `tfsdk:"purchase_date"`
+	PurchaseCost   tfutil.MoneyValue `tfsdk:"purchase_cost"`
+	MinAmt         types.Int64       `tfsdk:"min_amt"`
+	Notes          types.String      `tfsdk:"notes"`
 }
 
 func (r *AccessoryResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -107,6 +108,12 @@ func (r *AccessoryResource) Schema(ctx context.Context, req resource.SchemaReque
 				MarkdownDescription: "Purchase date in `YYYY-MM-DD` format.",
 				Optional:            true,
 			},
+			"purchase_cost": schema.StringAttribute{
+				MarkdownDescription: "Purchase cost as a decimal string, e.g. `1234.50`. " +
+					"Stored normalized; `1234.5`, `1234.50` and `1,234.50` are the same value.",
+				CustomType: tfutil.MoneyType{},
+				Optional:   true,
+			},
 			"min_amt": schema.Int64Attribute{
 				MarkdownDescription: "Minimum quantity before a low-stock alert triggers.",
 				Optional:            true,
@@ -138,6 +145,7 @@ func (m *AccessoryResourceModel) toBody() map[string]any {
 	tfutil.BodyString(body, "model_number", m.ModelNumber)
 	tfutil.BodyString(body, "order_number", m.OrderNumber)
 	tfutil.BodyNullableString(body, "purchase_date", m.PurchaseDate)
+	tfutil.BodyMoney(body, "purchase_cost", m.PurchaseCost)
 	tfutil.BodyNullableInt(body, "min_amt", m.MinAmt)
 	tfutil.BodyString(body, "notes", m.Notes)
 	return body
@@ -162,6 +170,7 @@ func (m *AccessoryResourceModel) fromAPI(api *inventoryapi.Accessory) {
 	} else {
 		m.PurchaseDate = types.StringNull()
 	}
+	m.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
 }
 
 func (r *AccessoryResource) read(ctx context.Context, id int64, data *AccessoryResourceModel) error {

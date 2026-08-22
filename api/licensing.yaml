@@ -176,6 +176,9 @@ components:
         order_number: { type: string, nullable: true }
         purchase_order: { type: string, nullable: true }
         purchase_date: { $ref: "#/components/schemas/DateObject" }
+        # Locale-formatted on read ("1,234.50"); the provider normalizes and
+        # writes plain decimals only (comma input crashes the API with a 302).
+        purchase_cost: { type: string, nullable: true }
         expiration_date: { $ref: "#/components/schemas/DateObject" }
         termination_date: { $ref: "#/components/schemas/DateObject" }
         license_name: { type: string, nullable: true }

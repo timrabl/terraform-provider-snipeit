@@ -28,6 +28,7 @@ const maintenanceFixture = `{
 	"start_date": {"date": "2026-08-05", "formatted": "Tue Aug 05, 2026"},
 	"completion_date": null,
 	"is_warranty": "1",
+	"cost": "1,500.50",
 	"notes": null
 }`
 
@@ -39,6 +40,10 @@ func TestMaintenanceFromAPI(t *testing.T) {
 
 	var m MaintenanceResourceModel
 	m.fromAPI(&api)
+
+	if m.Cost.ValueString() != "1500.50" {
+		t.Errorf("cost should be normalized, got %v", m.Cost)
+	}
 
 	if m.ID.ValueInt64() != 4 {
 		t.Errorf("id = %v", m.ID)

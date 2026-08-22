@@ -42,6 +42,7 @@ resource "snipeit_maintenance" "annual_service" {
 ### Optional
 
 - `completion_date` (String) Completion date in `YYYY-MM-DD` format.
+- `cost` (String) Maintenance cost as a decimal string, e.g. `1500.50`. Stored normalized; `1500.5`, `1500.50` and `1,500.50` are the same value.
 - `is_warranty` (Boolean) Whether the maintenance is covered by warranty.
 - `notes` (String) Free-form notes.
 

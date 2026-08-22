@@ -48,6 +48,7 @@ resource "snipeit_accessory" "test" {
   location_id     = snipeit_location.test.id
   model_number    = "ACC-100"
   order_number    = "ORD-1"
+  purchase_cost   = "88.10"
   purchase_date   = "2026-01-10"
   min_amt         = 2
   notes           = "created by acceptance test"
@@ -57,6 +58,7 @@ resource "snipeit_accessory" "test" {
 					resource.TestCheckResourceAttr("snipeit_accessory.test", "name", prefix),
 					resource.TestCheckResourceAttr("snipeit_accessory.test", "qty", "5"),
 					resource.TestCheckResourceAttr("snipeit_accessory.test", "model_number", "ACC-100"),
+					resource.TestCheckResourceAttr("snipeit_accessory.test", "purchase_cost", "88.10"),
 					resource.TestCheckResourceAttr("snipeit_accessory.test", "purchase_date", "2026-01-10"),
 					resource.TestCheckResourceAttr("snipeit_accessory.test", "min_amt", "2"),
 					resource.TestCheckResourceAttrPair(
@@ -140,6 +142,7 @@ resource "snipeit_consumable" "test" {
   manufacturer_id = snipeit_manufacturer.test.id
   item_no         = "ITEM-9"
   model_number    = "CON-200"
+  purchase_cost   = "7.50"
   order_number    = "ORD-2"
   purchase_date   = "2026-02-01"
   min_amt         = 3
@@ -150,6 +153,7 @@ resource "snipeit_consumable" "test" {
 					resource.TestCheckResourceAttr("snipeit_consumable.test", "name", prefix),
 					resource.TestCheckResourceAttr("snipeit_consumable.test", "qty", "10"),
 					resource.TestCheckResourceAttr("snipeit_consumable.test", "item_no", "ITEM-9"),
+					resource.TestCheckResourceAttr("snipeit_consumable.test", "purchase_cost", "7.50"),
 					resource.TestCheckResourceAttr("snipeit_consumable.test", "purchase_date", "2026-02-01"),
 					resource.TestCheckResourceAttr("snipeit_consumable.test", "min_amt", "3"),
 					resource.TestCheckResourceAttrPair(
@@ -211,6 +215,7 @@ resource "snipeit_component" "test" {
   category_id   = snipeit_category.test.id
   serial        = "SER-77"
   order_number  = "ORD-3"
+  purchase_cost = "6543.21"
   purchase_date = "2026-03-01"
   min_amt       = 1
   notes         = "created by acceptance test"
@@ -220,6 +225,7 @@ resource "snipeit_component" "test" {
 					resource.TestCheckResourceAttr("snipeit_component.test", "name", prefix),
 					resource.TestCheckResourceAttr("snipeit_component.test", "qty", "8"),
 					resource.TestCheckResourceAttr("snipeit_component.test", "serial", "SER-77"),
+					resource.TestCheckResourceAttr("snipeit_component.test", "purchase_cost", "6543.21"),
 					resource.TestCheckResourceAttr("snipeit_component.test", "purchase_date", "2026-03-01"),
 					resource.TestCheckResourceAttr("snipeit_component.test", "min_amt", "1"),
 				),

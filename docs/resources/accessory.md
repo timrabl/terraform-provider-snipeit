@@ -45,6 +45,7 @@ resource "snipeit_accessory" "mx_keys" {
 - `model_number` (String) Manufacturer model number.
 - `notes` (String) Free-form notes.
 - `order_number` (String) Order number of the purchase.
+- `purchase_cost` (String) Purchase cost as a decimal string, e.g. `1234.50`. Stored normalized; `1234.5`, `1234.50` and `1,234.50` are the same value.
 - `purchase_date` (String) Purchase date in `YYYY-MM-DD` format.
 - `supplier_id` (Number) Id of the supplier.
 

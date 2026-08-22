@@ -23,11 +23,12 @@ type Accessory struct {
 	Manufacturer *NestedRef `json:"manufacturer,omitempty"`
 
 	// MinQty Read-serializer name of the write field min_amt.
-	MinQty      FlexInt `json:"min_qty"`
-	ModelNumber *string `json:"model_number,omitempty"`
-	Name        string  `json:"name"`
-	Notes       *string `json:"notes,omitempty"`
-	OrderNumber *string `json:"order_number,omitempty"`
+	MinQty       FlexInt `json:"min_qty"`
+	ModelNumber  *string `json:"model_number,omitempty"`
+	Name         string  `json:"name"`
+	Notes        *string `json:"notes,omitempty"`
+	OrderNumber  *string `json:"order_number,omitempty"`
+	PurchaseCost *string `json:"purchase_cost,omitempty"`
 
 	// PurchaseDate Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.
 	PurchaseDate *DateObject `json:"purchase_date,omitempty"`
@@ -81,10 +82,11 @@ type Component struct {
 	Location *NestedRef `json:"location,omitempty"`
 
 	// MinAmt Integer the API may serialize as 24, "24" or "24 mo.".
-	MinAmt      FlexInt `json:"min_amt"`
-	Name        string  `json:"name"`
-	Notes       *string `json:"notes,omitempty"`
-	OrderNumber *string `json:"order_number,omitempty"`
+	MinAmt       FlexInt `json:"min_amt"`
+	Name         string  `json:"name"`
+	Notes        *string `json:"notes,omitempty"`
+	OrderNumber  *string `json:"order_number,omitempty"`
+	PurchaseCost *string `json:"purchase_cost,omitempty"`
 
 	// PurchaseDate Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.
 	PurchaseDate *DateObject `json:"purchase_date,omitempty"`
@@ -138,11 +140,12 @@ type Consumable struct {
 	Manufacturer *NestedRef `json:"manufacturer,omitempty"`
 
 	// MinAmt Integer the API may serialize as 24, "24" or "24 mo.".
-	MinAmt      FlexInt `json:"min_amt"`
-	ModelNumber *string `json:"model_number,omitempty"`
-	Name        string  `json:"name"`
-	Notes       *string `json:"notes,omitempty"`
-	OrderNumber *string `json:"order_number,omitempty"`
+	MinAmt       FlexInt `json:"min_amt"`
+	ModelNumber  *string `json:"model_number,omitempty"`
+	Name         string  `json:"name"`
+	Notes        *string `json:"notes,omitempty"`
+	OrderNumber  *string `json:"order_number,omitempty"`
+	PurchaseCost *string `json:"purchase_cost,omitempty"`
 
 	// PurchaseDate Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.
 	PurchaseDate *DateObject `json:"purchase_date,omitempty"`
