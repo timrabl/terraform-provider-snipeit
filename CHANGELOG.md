@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.1.0...v0.1.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **assets:** detect soft-deleted assets on read ([e957538](https://github.com/timrabl/terraform-provider-snipeit/commit/e957538676fd07dffe2b2cd39b62dcd4c619a874))
+* **client:** treat API redirects as not found ([25e8335](https://github.com/timrabl/terraform-provider-snipeit/commit/25e83350e53200e828459b411cc55875ed8b08a1))
+
 ## 0.1.0 (2026-08-22)
 
 
