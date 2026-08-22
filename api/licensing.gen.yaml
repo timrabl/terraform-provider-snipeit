@@ -1,0 +1,7 @@
+# oapi-codegen config for the licensing domain (models only).
+package: licensingapi
+output: internal/api/licensing/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

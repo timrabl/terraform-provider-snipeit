@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Snipe-IT API — licensing domain (corrected)
+  version: 8.0.4
+  description: |
+    Corrected, live-verified spec for the licensing domain: licenses and
+    license seats. Derived from real responses of Snipe-IT v8.0.4 — NOT from
+    the flawed upstream spec.
+
+    Transport quirks (handled by internal/client, not modeled here):
+    - Mutations and all errors — including "not found" — return HTTP 200 with
+      an envelope {status: success|error, messages, payload}. Success must be
+      read from the envelope.
+    - Create responses carry only a partial payload (submitted fields + id);
+      callers must re-GET for the full object.
+    - The API rate limiter answers HTTP 429; the transport retries.
+
+    Licensing-specific quirks (live-verified):
+    - The write field `serial` is echoed back as `product_key` in GET
+      responses.
+    - `purchase_cost` exists but is returned locale-formatted and does not
+      round-trip; the provider deliberately does not model it.
+    - Seats are created/destroyed implicitly with the license's `seats`
+      count; they can only be PATCHed. Switching an OCCUPIED seat's target
+      type (user <-> asset) in a single PATCH fails with "Target not found";
+      release the seat first (both `assigned_to` and `asset_id` explicit
+      JSON null), then assign the new target. Releasing and assigning a free
+      seat work in one PATCH.
+
+    Request bodies are intentionally NOT modeled as schemas: the provider
+    builds them as maps because clear-on-unset semantics differ per field
+    (strings clear with "", dates and references clear with explicit JSON
+    null, omitted keys keep the server value).
+servers:
+  - url: /api/v1
+tags:
+  - name: licenses
+  - name: seats
+paths:
+  /licenses:
+    get:
+      tags: [licenses]
+      summary: List licenses (supports ?search= and ?limit=/offset=)
+      responses:
+        "200":
+          description: License list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseList" }
+    post:
+      tags: [licenses]
+      summary: >-
+        Create a license (enveloped response, partial payload). Requires
+        name, seats and a category_id of a license-type category.
+      responses:
+        "200": { description: Envelope with payload.id }
+  /licenses/{id}:
+    get:
+      tags: [licenses]
+      summary: Get one license (raw object, no envelope)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: License detail (includes free_seats_count)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/License" }
+    patch:
+      tags: [licenses]
+      summary: Partially update a license (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [licenses]
+      summary: >-
+        Delete a license (enveloped response). Fails while any seat is still
+        assigned.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /licenses/{id}/seats:
+    get:
+      tags: [seats]
+      summary: List the seats of a license (paginated via ?limit=/offset=)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Seat list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseSeatList" }
+  /licenses/{id}/seats/{seat_id}:
+    get:
+      tags: [seats]
+      summary: Get one seat (raw object)
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { $ref: "#/components/parameters/seat_id" }
+      responses:
+        "200":
+          description: Seat detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseSeat" }
+    patch:
+      tags: [seats]
+      summary: >-
+        Assign or release a seat (enveloped response). Body keys:
+        `assigned_to` (user id or null) and `asset_id` (asset id or null).
+        See the domain description for the occupied-seat reassignment quirk:
+        release first, then assign.
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { $ref: "#/components/parameters/seat_id" }
+      responses:
+        "200": { description: Envelope }
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    seat_id:
+      name: seat_id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+  schemas:
+    NestedRef:
+      description: 'Nested related-object reference, e.g. {"id": 3, "name": "X"}.'
+      type: object
+      x-go-type: client.Ref
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+    DateObject:
+      description: 'Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.'
+      type: object
+      x-go-type: client.Date
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        date: { type: string }
+        formatted: { type: string }
+    FlexInt:
+      description: >-
+        Integer the API may return as a bare number, a numeric string, or a
+        decorated string.
+      type: integer
+      format: int64
+      x-go-type: client.FlexInt
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+    FlexBool:
+      description: Boolean the API may return as true/false, 0/1 or "0"/"1".
+      type: boolean
+      x-go-type: client.FlexBool
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+    License:
+      type: object
+      required: [id, name, seats, free_seats_count, reassignable, maintained]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        seats: { $ref: "#/components/schemas/FlexInt" }
+        free_seats_count: { $ref: "#/components/schemas/FlexInt" }
+        category: { $ref: "#/components/schemas/NestedRef" }
+        company: { $ref: "#/components/schemas/NestedRef" }
+        manufacturer: { $ref: "#/components/schemas/NestedRef" }
+        supplier: { $ref: "#/components/schemas/NestedRef" }
+        order_number: { type: string, nullable: true }
+        purchase_order: { type: string, nullable: true }
+        purchase_date: { $ref: "#/components/schemas/DateObject" }
+        expiration_date: { $ref: "#/components/schemas/DateObject" }
+        termination_date: { $ref: "#/components/schemas/DateObject" }
+        license_name: { type: string, nullable: true }
+        license_email: { type: string, nullable: true }
+        product_key:
+          type: string
+          nullable: true
+          description: GET-side name of the write field `serial`.
+        reassignable: { $ref: "#/components/schemas/FlexBool" }
+        maintained: { $ref: "#/components/schemas/FlexBool" }
+        notes: { type: string, nullable: true }
+    LicenseList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/License" }
+    LicenseSeat:
+      type: object
+      required: [id, license_id]
+      properties:
+        id: { type: integer, format: int64 }
+        license_id: { type: integer, format: int64 }
+        assigned_user: { $ref: "#/components/schemas/NestedRef" }
+        assigned_asset: { $ref: "#/components/schemas/NestedRef" }
+    LicenseSeatList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/LicenseSeat" }
