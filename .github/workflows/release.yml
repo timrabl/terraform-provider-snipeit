@@ -5,6 +5,14 @@ on:
   push:
     tags:
       - v*
+  # Manual fallback: rebuild/attach assets for an existing tag (runs this
+  # workflow definition from the selected branch, not the tag's).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)release, e.g. v0.1.0
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -16,20 +24,23 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # goreleaser needs the full history for the changelog/version math.
+          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: stable
           check-latest: true
-      - id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      # The secret holds only the signing subkey; a plain import plus
+      # loopback pinentry avoids gpg-agent, which cannot preset a
+      # passphrase for the absent primary key.
+      - name: Import release signing subkey
+        run: printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           args: release --clean
         env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GPG_FINGERPRINT: 7F4C2D749B8707B8761D54DAAA69D1ED81B64D48
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

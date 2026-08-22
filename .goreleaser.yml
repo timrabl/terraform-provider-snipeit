@@ -43,8 +43,16 @@ checksum:
 
 signs:
   - artifacts: checksum
+    # Loopback pinentry with the passphrase on stdin: works with a
+    # secret-subkey-only keyring and needs no gpg-agent preset.
+    stdin: "{{ .Env.GPG_PASSPHRASE }}"
     args:
       - --batch
+      - --yes
+      - --pinentry-mode
+      - loopback
+      - --passphrase-fd
+      - "0"
       - --local-user
       - "{{ .Env.GPG_FINGERPRINT }}"
       - --output
