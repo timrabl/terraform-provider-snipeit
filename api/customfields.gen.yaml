@@ -1,0 +1,7 @@
+# oapi-codegen config for the customfields domain (models only).
+package: customfieldsapi
+output: internal/api/customfields/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

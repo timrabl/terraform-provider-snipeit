@@ -1,0 +1,7 @@
+# oapi-codegen config for the assets domain (models only).
+package: assetsapi
+output: internal/api/assets/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

@@ -1,0 +1,60 @@
+# Task runner configuration (mise-en-place). Run `mise tasks` for an overview.
+
+[env]
+# env.local (gitignored) holds the machine-specific dev instance settings and
+# the API token. See env.local.example.
+_.file = { path = "env.local", redact = true }
+
+[tasks.build]
+description = "Compile the provider"
+run = "go build -v ./..."
+
+[tasks.install]
+description = "Install the provider binary into GOBIN (for terraformrc dev_overrides)"
+run = "go install ."
+
+[tasks.fmt]
+description = "Format Go sources"
+run = "gofmt -s -w -e ."
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run"
+
+[tasks.test]
+description = "Run unit tests"
+run = "go test -v -cover -timeout=120s -parallel=10 ./..."
+
+[tasks.testacc]
+description = "Run acceptance tests against the dev Snipe-IT instance"
+run = 'TF_ACC=1 SNIPEIT_URL="${SNIPEIT_URL:-${SNIPEIT_DEV_APP_URL:-http://localhost:8085}}" SNIPEIT_TOKEN="${SNIPEIT_TOKEN:-$SNIPE_IT_API_TOKEN}" go test ./internal/... -v -timeout 60m'
+
+[tasks.generate]
+description = "Regenerate provider docs (tfplugindocs)"
+run = "go generate ./..."
+
+[tasks."api:generate"]
+description = "Regenerate API model types from the corrected specs in api/"
+run = '''
+for cfg in api/*.gen.yaml; do
+  spec="${cfg%.gen.yaml}.yaml"
+  echo "generating from $spec"
+  go tool oapi-codegen -config "$cfg" "$spec"
+done
+gofmt -w internal/api
+'''
+
+[tasks."dev:up"]
+description = "Start the disposable Snipe-IT dev instance (uses your current docker context)"
+dir = "dev"
+run = "docker compose -p snipeit-dev up -d"
+
+[tasks."dev:down"]
+description = "Stop the Snipe-IT dev instance (volumes are kept)"
+dir = "dev"
+run = "docker compose -p snipeit-dev down"
+
+[tasks."dev:destroy"]
+description = "Destroy the Snipe-IT dev instance INCLUDING volumes"
+dir = "dev"
+run = "docker compose -p snipeit-dev down -v"

@@ -1,0 +1,290 @@
+openapi: 3.0.3
+info:
+  title: Snipe-IT API — organization domain (corrected)
+  version: 8.0.4
+  description: |
+    Corrected, live-verified spec for the organization domain: companies,
+    departments, locations, suppliers. Derived from real responses of
+    Snipe-IT v8.0.4 — NOT from the flawed upstream spec.
+
+    Transport quirks (handled by internal/client, not modeled here):
+    - Mutations (POST/PATCH/DELETE) and all errors — including "not found" —
+      return HTTP 200 with an envelope {status: success|error, messages,
+      payload}. Success must be read from the envelope.
+    - Create responses carry only a partial payload (submitted fields + id);
+      callers must re-GET for the full object.
+    - The API rate limiter answers HTTP 429; the transport retries.
+
+    Request bodies are intentionally NOT modeled as schemas: the provider
+    builds them as maps because clear-on-unset semantics differ per field
+    (strings clear with "", references clear with explicit JSON null,
+    omitted keys keep the server value).
+servers:
+  - url: /api/v1
+tags:
+  - name: companies
+  - name: departments
+  - name: locations
+  - name: suppliers
+paths:
+  /companies:
+    get:
+      tags: [companies]
+      summary: List companies (supports ?search= and ?limit=/offset=)
+      responses:
+        "200":
+          description: Company list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyList" }
+    post:
+      tags: [companies]
+      summary: Create a company (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /companies/{id}:
+    get:
+      tags: [companies]
+      summary: Get one company (raw object, no envelope)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Company detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Company" }
+    patch:
+      tags: [companies]
+      summary: Partially update a company (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [companies]
+      summary: Delete a company (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /departments:
+    get:
+      tags: [departments]
+      summary: List departments
+      responses:
+        "200":
+          description: Department list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DepartmentList" }
+    post:
+      tags: [departments]
+      summary: Create a department (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /departments/{id}:
+    get:
+      tags: [departments]
+      summary: Get one department (raw object)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Department detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Department" }
+    patch:
+      tags: [departments]
+      summary: Partially update a department (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [departments]
+      summary: Delete a department (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /locations:
+    get:
+      tags: [locations]
+      summary: List locations
+      responses:
+        "200":
+          description: Location list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationList" }
+    post:
+      tags: [locations]
+      summary: Create a location (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /locations/{id}:
+    get:
+      tags: [locations]
+      summary: Get one location (raw object)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Location detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Location" }
+    patch:
+      tags: [locations]
+      summary: Partially update a location (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [locations]
+      summary: Delete a location (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /suppliers:
+    get:
+      tags: [suppliers]
+      summary: List suppliers
+      responses:
+        "200":
+          description: Supplier list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierList" }
+    post:
+      tags: [suppliers]
+      summary: >-
+        Create a supplier (enveloped response, partial payload). NOTE: the
+        upstream spec omits supplier mutations entirely; they are live-verified
+        to work.
+      responses:
+        "200": { description: Envelope with payload.id }
+  /suppliers/{id}:
+    get:
+      tags: [suppliers]
+      summary: Get one supplier (raw object)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Supplier detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Supplier" }
+    patch:
+      tags: [suppliers]
+      summary: Partially update a supplier (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [suppliers]
+      summary: Delete a supplier (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+  schemas:
+    NestedRef:
+      description: 'Nested related-object reference, e.g. {"id": 3, "name": "X"}.'
+      type: object
+      x-go-type: client.Ref
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+    Company:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        fax: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+    CompanyList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Company" }
+    Department:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        company: { $ref: "#/components/schemas/NestedRef" }
+        manager: { $ref: "#/components/schemas/NestedRef" }
+        location: { $ref: "#/components/schemas/NestedRef" }
+        notes: { type: string, nullable: true }
+    DepartmentList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Department" }
+    Location:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        address: { type: string, nullable: true }
+        address2: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        state: { type: string, nullable: true }
+        country: { type: string, nullable: true }
+        zip: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        fax: { type: string, nullable: true }
+        currency: { type: string, nullable: true }
+        parent: { $ref: "#/components/schemas/NestedRef" }
+        manager: { $ref: "#/components/schemas/NestedRef" }
+        ldap_ou: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+    LocationList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Location" }
+    Supplier:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        address: { type: string, nullable: true }
+        address2: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        state: { type: string, nullable: true }
+        country: { type: string, nullable: true }
+        zip: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        fax: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        contact: { type: string, nullable: true }
+        url: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+    SupplierList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Supplier" }

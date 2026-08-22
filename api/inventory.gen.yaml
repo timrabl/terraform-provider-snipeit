@@ -1,0 +1,7 @@
+# oapi-codegen config for the inventory domain (models only).
+package: inventoryapi
+output: internal/api/inventory/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

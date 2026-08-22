@@ -1,0 +1,7 @@
+# oapi-codegen config for the operations domain (models only).
+package: operationsapi
+output: internal/api/operations/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

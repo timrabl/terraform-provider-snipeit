@@ -1,0 +1,99 @@
+---
+# Disposable Snipe-IT dev instance for provider acceptance testing.
+#
+# Generic by design: everything machine-specific comes from environment
+# variables, which mise loads from env.local (gitignored) at the repo root.
+# Run it through the task runner so the variables are in scope:
+#
+#   mise run dev:up
+#
+# Only SNIPEIT_DEV_APP_KEY has no default. Generate one once and put it in
+# your env.local:
+#
+#   echo "SNIPEIT_DEV_APP_KEY=base64:$(openssl rand -base64 32)" >> env.local
+#
+# See env.local.example for all variables. Fresh instance, dummy data only.
+
+x-restart-policy: &x-restart-policy
+  restart: unless-stopped
+
+services:
+  db:
+    <<: *x-restart-policy
+    image: mariadb:11.5.2-noble
+    environment:
+      MYSQL_DATABASE: snipeit
+      MYSQL_USER: snipeit
+      MYSQL_PASSWORD: ${SNIPEIT_DEV_DB_PASSWORD:-snipeit-dev}
+      MYSQL_ROOT_PASSWORD: ${SNIPEIT_DEV_DB_ROOT_PASSWORD:-snipeit-dev-root}
+      MARIADB_AUTO_UPGRADE: 1
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+
+  cache:
+    <<: *x-restart-policy
+    image: redis:7.4.0-alpine
+
+  app:
+    <<: *x-restart-policy
+    image: snipe/snipe-it:${SNIPEIT_DEV_VERSION:-v8.0.4}
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      cache:
+        condition: service_started
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${SNIPEIT_DEV_APP_KEY:?generate with "openssl rand -base64 32" and set as base64:<key> in env.local}
+
+      APP_URL: ${SNIPEIT_DEV_APP_URL:-http://localhost:8085}
+      APP_TIMEZONE: ${SNIPEIT_DEV_TIMEZONE:-Europe/Berlin}
+      APP_LOCALE: en
+      MAX_RESULTS: 500
+
+      PRIVATE_FILESYSTEM_DISK: local
+      PUBLIC_FILESYSTEM_DISK: local_public
+
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_DATABASE: snipeit
+      DB_USERNAME: snipeit
+      DB_PASSWORD: ${SNIPEIT_DEV_DB_PASSWORD:-snipeit-dev}
+
+      IMAGE_LIB: gd
+
+      SESSION_LIFETIME: 12000
+      EXPIRE_ON_CLOSE: "false"
+      ENCRYPT: "true"
+      COOKIE_NAME: snipeit_session
+      COOKIE_DOMAIN: ${SNIPEIT_DEV_COOKIE_DOMAIN:-localhost}
+      SECURE_COOKIES: "false"
+      API_TOKEN_EXPIRATION_YEARS: 40
+      # Raise the API rate limit (default 120/min) so acceptance tests
+      # don't trip the throttle.
+      API_THROTTLE_PER_MINUTE: 3000
+
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      QUEUE_DRIVER: sync
+      CACHE_PREFIX: snipeit
+
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+
+      APP_LOG: stderr
+    ports:
+      - "${SNIPEIT_DEV_HTTP_PORT:-8085}:80"
+    volumes:
+      - app_data:/var/lib/snipeit
+
+volumes:
+  db_data:
+  app_data:
