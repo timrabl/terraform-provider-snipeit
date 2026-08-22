@@ -202,6 +202,11 @@ func (s *Service) GetHardware(ctx context.Context, id int64) (*Hardware, error) 
 	if err := s.c.Get(ctx, fmt.Sprintf("/hardware/%d", id), &out); err != nil {
 		return nil, err
 	}
+	// GET keeps returning soft-deleted assets; a set deleted_at means the
+	// asset is trashed and must be treated as gone.
+	if out.DeletedAt != nil {
+		return nil, client.ErrNotFound
+	}
 	return &out, nil
 }
 
@@ -210,6 +215,9 @@ func (s *Service) GetHardwareByTag(ctx context.Context, tag string) (*Hardware, 
 	var out Hardware
 	if err := s.c.Get(ctx, "/hardware/bytag/"+url.PathEscape(tag), &out); err != nil {
 		return nil, err
+	}
+	if out.DeletedAt != nil {
+		return nil, client.ErrNotFound
 	}
 	return &out, nil
 }

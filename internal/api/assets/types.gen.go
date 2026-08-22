@@ -45,7 +45,10 @@ type Hardware struct {
 
 	// Company Nested related-object reference, e.g. {"id": 3, "name": "X"}.
 	Company *NestedRef `json:"company,omitempty"`
-	Id      int64      `json:"id"`
+
+	// DeletedAt Nested timestamp, e.g. {"datetime": "2026-01-15 12:00:00", "formatted": "..."}.
+	DeletedAt *NestedDateTime `json:"deleted_at,omitempty"`
+	Id        int64           `json:"id"`
 
 	// Model Nested related-object reference, e.g. {"id": 3, "name": "X"}.
 	Model       *NestedRef `json:"model,omitempty"`
@@ -130,6 +133,9 @@ type ModelList struct {
 
 // NestedDate Nested date, e.g. {"date": "2026-01-15", "formatted": "..."}.
 type NestedDate = client.Date
+
+// NestedDateTime Nested timestamp, e.g. {"datetime": "2026-01-15 12:00:00", "formatted": "..."}.
+type NestedDateTime = client.DateTime
 
 // NestedRef Nested related-object reference, e.g. {"id": 3, "name": "X"}.
 type NestedRef = client.Ref

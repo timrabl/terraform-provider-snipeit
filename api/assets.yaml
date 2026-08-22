@@ -295,6 +295,15 @@ components:
       properties:
         date: { type: string }
         formatted: { type: string }
+    NestedDateTime:
+      description: 'Nested timestamp, e.g. {"datetime": "2026-01-15 12:00:00", "formatted": "..."}.'
+      type: object
+      x-go-type: client.DateTime
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        datetime: { type: string }
+        formatted: { type: string }
     FlexInt:
       description: >-
         Integer that the API may serialize as 24, "24", "24 mo." or
@@ -417,6 +426,9 @@ components:
         supplier: { $ref: "#/components/schemas/NestedRef" }
         rtd_location: { $ref: "#/components/schemas/NestedRef" }
         purchase_date: { $ref: "#/components/schemas/NestedDate" }
+        # Set when the asset was soft-deleted; GET keeps returning trashed
+        # assets, so a non-null value means the object is effectively gone.
+        deleted_at: { $ref: "#/components/schemas/NestedDateTime" }
         warranty_months: { $ref: "#/components/schemas/FlexInt" }
         requestable: { $ref: "#/components/schemas/FlexBool" }
     HardwareList:
