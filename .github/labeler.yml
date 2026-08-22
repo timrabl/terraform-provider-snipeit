@@ -1,0 +1,45 @@
+---
+# Path-based PR labels, applied by .github/workflows/labeler.yml.
+
+area/specs:
+  - changed-files:
+      - any-glob-to-any-file: api/**
+
+area/client:
+  - changed-files:
+      - any-glob-to-any-file:
+          - internal/client/**
+          - internal/api/**
+
+area/provider:
+  - changed-files:
+      - any-glob-to-any-file:
+          - internal/provider/**
+          - internal/services/**
+          - internal/tfutil/**
+          - main.go
+
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - README.md
+          - docs/**
+          - docs-internal/**
+          - examples/**
+
+area/dev-env:
+  - changed-files:
+      - any-glob-to-any-file:
+          - dev/**
+          - mise.toml
+          - env.local.example
+
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: .github/**
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*_test.go'
+          - internal/acctest/**

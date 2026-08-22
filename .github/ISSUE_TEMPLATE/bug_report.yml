@@ -1,0 +1,42 @@
+---
+name: Bug report
+description: Something the provider does wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Terraform configuration
+      description: Minimal config that reproduces the problem.
+      render: hcl
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output / logs
+      description: Error output, plan diff, or TF_LOG=DEBUG excerpt. Redact tokens.
+      render: text
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: provider / Terraform / Snipe-IT
+      placeholder: provider v0.1.0, Terraform 1.15.8, Snipe-IT v8.0.4
+    validations:
+      required: true
