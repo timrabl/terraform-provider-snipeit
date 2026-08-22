@@ -86,7 +86,7 @@ func New(cfg Config) (*Client, error) {
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	if cfg.Insecure {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //nolint:gosec // explicit opt-in for dev instances
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec G402 -- explicit opt-in for dev instances //nolint:gosec
 	}
 
 	return &Client{
