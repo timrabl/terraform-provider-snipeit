@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: Snipe-IT API — operations domain (corrected)
+  version: 8.0.4
+  description: |
+    Corrected, live-verified spec for the operations domain: asset
+    maintenances, the activity report (audit log) and the hardware audit
+    due/overdue lists. Derived from real responses of Snipe-IT v8.0.4 — NOT
+    from the flawed upstream spec.
+
+    Transport quirks (handled by internal/client, not modeled here):
+    - Mutations (POST/PATCH/DELETE) and all errors — including "not found" —
+      return HTTP 200 with an envelope {status: success|error, messages,
+      payload}. Success must be read from the envelope.
+    - Create responses carry only a partial payload (submitted fields + id);
+      callers must re-GET for the full object.
+
+    Domain quirks (all live-verified on v8.0.4):
+    - GET /maintenances/{id} and PATCH /maintenances/{id} both work, although
+      the upstream spec claims only a list endpoint and PUT on the literal
+      path "/maintenances/:id".
+    - `asset_maintenance_type` is NOT validated server-side; any string is
+      accepted and stored. Common values: Maintenance, Repair, Upgrade,
+      PAT test, Calibration, Software Support, Hardware Support.
+    - The maintenance `cost` is returned locale-formatted and cannot
+      round-trip stably; it is intentionally not modeled.
+
+    Request bodies are intentionally NOT modeled as schemas: the provider
+    builds them as maps because clear-on-unset semantics differ per field.
+servers:
+  - url: /api/v1
+tags:
+  - name: maintenances
+  - name: reports
+  - name: audit
+paths:
+  /maintenances:
+    get:
+      tags: [maintenances]
+      summary: List maintenances
+      responses:
+        "200":
+          description: Maintenance list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MaintenanceList" }
+    post:
+      tags: [maintenances]
+      summary: Create a maintenance (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /maintenances/{id}:
+    get:
+      tags: [maintenances]
+      summary: >-
+        Get one maintenance (raw object). Works despite the upstream spec not
+        listing this endpoint.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Maintenance detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Maintenance" }
+    patch:
+      tags: [maintenances]
+      summary: >-
+        Partially update a maintenance (enveloped response). Works despite the
+        upstream spec listing only PUT on the literal path "/maintenances/:id".
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [maintenances]
+      summary: Delete a maintenance (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /reports/activity:
+    get:
+      tags: [reports]
+      summary: >-
+        Read the activity report (audit log), newest first. Supports ?limit=,
+        ?offset=, ?action_type=, ?item_type= and ?item_id= (item_id requires
+        item_type).
+      responses:
+        "200":
+          description: Activity rows
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityList" }
+  /hardware/audit/due:
+    get:
+      tags: [audit]
+      summary: List assets due (or nearly due) for audit
+      responses:
+        "200":
+          description: Asset rows
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditList" }
+  /hardware/audit/overdue:
+    get:
+      tags: [audit]
+      summary: List assets overdue for audit
+      responses:
+        "200":
+          description: Asset rows
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditList" }
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+  schemas:
+    NestedRef:
+      description: 'Nested related-object reference, e.g. {"id": 3, "name": "X"}.'
+      type: object
+      x-go-type: client.Ref
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+    NestedDate:
+      description: 'Nested date shape {"date": "2020-01-01", "formatted": "..."}.'
+      type: object
+      x-go-type: client.Date
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        date: { type: string }
+        formatted: { type: string }
+    NestedDateTime:
+      description: 'Nested timestamp shape {"datetime": "...", "formatted": "..."}.'
+      type: object
+      x-go-type: client.DateTime
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        datetime: { type: string }
+        formatted: { type: string }
+    FlexBool:
+      description: Boolean the API returns as true/false, 0/1 or "0"/"1".
+      type: boolean
+      x-go-type: client.FlexBool
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+    Maintenance:
+      type: object
+      description: >-
+        Maintenance detail. The locale-formatted `cost` is intentionally not
+        modeled (cannot round-trip).
+      required: [id, asset_maintenance_type, title, is_warranty]
+      properties:
+        id: { type: integer, format: int64 }
+        asset:
+          $ref: "#/components/schemas/NestedRef"
+        supplier:
+          $ref: "#/components/schemas/NestedRef"
+        asset_maintenance_type:
+          type: string
+          description: Not validated server-side; any string is stored.
+        title: { type: string }
+        start_date:
+          $ref: "#/components/schemas/NestedDate"
+        completion_date:
+          $ref: "#/components/schemas/NestedDate"
+        is_warranty:
+          $ref: "#/components/schemas/FlexBool"
+        notes: { type: string, nullable: true }
+    MaintenanceList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Maintenance" }
+    ActivityItem:
+      type: object
+      required: [id, name, type]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        type: { type: string }
+    ActivityAdmin:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+    ActivityRow:
+      type: object
+      required: [id, action_type]
+      properties:
+        id: { type: integer, format: int64 }
+        action_type: { type: string }
+        item:
+          $ref: "#/components/schemas/ActivityItem"
+        target:
+          $ref: "#/components/schemas/ActivityItem"
+        admin:
+          $ref: "#/components/schemas/ActivityAdmin"
+        note: { type: string, nullable: true }
+        action_date:
+          $ref: "#/components/schemas/NestedDateTime"
+    ActivityList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ActivityRow" }
+    AuditRow:
+      type: object
+      required: [id, asset_tag]
+      properties:
+        id: { type: integer, format: int64 }
+        asset_tag: { type: string }
+        name: { type: string, nullable: true }
+    AuditList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AuditRow" }
