@@ -177,3 +177,17 @@ func TestFlattenMessages(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRedirectMeansNotFound(t *testing.T) {
+	// Snipe-IT redirects API GETs for some soft-deleted objects to the web
+	// login page; the client must not follow it and must report not-found.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv).Get(context.Background(), "/accessories/99", nil)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound for redirected GET, got %v", err)
+	}
+}

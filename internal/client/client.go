@@ -96,6 +96,12 @@ func New(cfg Config) (*Client, error) {
 		httpClient: &http.Client{
 			Timeout:   timeout,
 			Transport: transport,
+			// API endpoints never redirect on success. Snipe-IT answers
+			// requests for some trashed objects with a redirect to the web
+			// login page; following it would yield HTML instead of JSON.
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		},
 		retryDelay: defaultRetryDelay,
 	}, nil
@@ -222,6 +228,11 @@ func (c *Client) Get(ctx context.Context, path string, out any) error {
 		return err
 	}
 	if code == http.StatusNotFound {
+		return ErrNotFound
+	}
+	// A redirect means the API route fell through to the web app, which
+	// happens when the object is soft-deleted: treat it as gone.
+	if code >= 300 && code < 400 {
 		return ErrNotFound
 	}
 
