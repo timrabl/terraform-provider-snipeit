@@ -147,6 +147,24 @@ func flattenMessages(raw json.RawMessage) string {
 	return string(raw)
 }
 
+// errorBody extracts a human-readable message from a non-envelope error body.
+// Auth failures answer {"error": "..."} instead of the usual envelope.
+func errorBody(data []byte) string {
+	var e struct {
+		Error   string `json:"error"`
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(data, &e); err == nil {
+		if e.Error != "" {
+			return e.Error
+		}
+		if e.Message != "" {
+			return e.Message
+		}
+	}
+	return strings.TrimSpace(string(data))
+}
+
 func isNotFoundMessage(msg string) bool {
 	lower := strings.ToLower(msg)
 	return strings.Contains(lower, "not found") || strings.Contains(lower, "does not exist")
@@ -246,7 +264,7 @@ func (c *Client) Get(ctx context.Context, path string, out any) error {
 		return &APIError{StatusCode: code, Messages: msg}
 	}
 	if code >= 400 {
-		return &APIError{StatusCode: code, Messages: strings.TrimSpace(string(data))}
+		return &APIError{StatusCode: code, Messages: errorBody(data)}
 	}
 	if out == nil {
 		return nil
@@ -268,9 +286,14 @@ func (c *Client) mutate(ctx context.Context, method, path string, body, out any)
 	var env envelope
 	if err := json.Unmarshal(data, &env); err != nil {
 		if code >= 400 {
-			return &APIError{StatusCode: code, Messages: strings.TrimSpace(string(data))}
+			return &APIError{StatusCode: code, Messages: errorBody(data)}
 		}
 		return fmt.Errorf("snipe-it: decoding %s %s envelope: %w", method, path, err)
+	}
+	// Bodies like {"error": "..."} parse as an empty envelope; treat them as
+	// plain HTTP errors rather than reporting an empty message.
+	if env.Status == "" && code >= 400 {
+		return &APIError{StatusCode: code, Messages: errorBody(data)}
 	}
 	if env.Status != "success" {
 		msg := flattenMessages(env.Messages)
