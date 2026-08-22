@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.1.1...v0.2.0) (2026-08-22)
+
+
+### Features
+
+* support purchase cost attributes ([#21](https://github.com/timrabl/terraform-provider-snipeit/issues/21)) ([b2a1849](https://github.com/timrabl/terraform-provider-snipeit/commit/b2a184906b1d887328429a31a08195008eb51f06)), closes [#14](https://github.com/timrabl/terraform-provider-snipeit/issues/14)
+
+
+### Bug Fixes
+
+* **client:** flatten non-envelope error bodies ([#19](https://github.com/timrabl/terraform-provider-snipeit/issues/19)) ([23ea56a](https://github.com/timrabl/terraform-provider-snipeit/commit/23ea56af646c889739360c6cb33e94eacc2557cc)), closes [#18](https://github.com/timrabl/terraform-provider-snipeit/issues/18)
+* preserve explicitly configured zero values ([#22](https://github.com/timrabl/terraform-provider-snipeit/issues/22)) ([1fa49ba](https://github.com/timrabl/terraform-provider-snipeit/commit/1fa49bad3ef913337927817cbaf489ded64754e6))
+
 ## [0.1.1](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.1.0...v0.1.1) (2026-08-22)
 
 
