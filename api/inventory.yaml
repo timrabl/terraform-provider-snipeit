@@ -1,0 +1,432 @@
+openapi: 3.0.3
+info:
+  title: Snipe-IT API — inventory domain (corrected)
+  version: 8.0.4
+  description: |
+    Corrected, live-verified spec for the inventory domain: accessories,
+    consumables, components, and the checkout/checkin flows (including the
+    asset checkout flow used by snipeit_hardware_checkout). Derived from real
+    responses of Snipe-IT v8.0.4 — NOT from the flawed upstream spec.
+
+    Transport quirks (handled by internal/client, not modeled here):
+    - Mutations and all errors — including "not found" — return HTTP 200 with
+      an envelope {status: success|error, messages, payload}. Success must be
+      read from the envelope.
+    - Create responses carry only a partial payload (submitted fields + id);
+      callers must re-GET for the full object.
+    - The API rate limiter answers HTTP 429; the transport retries.
+
+    Request bodies are intentionally NOT modeled as schemas: the provider
+    builds them as maps because clear-on-unset semantics differ per field
+    (strings clear with "", references clear with explicit JSON null,
+    omitted keys keep the server value).
+
+    Checkout/checkin pivot semantics (all live-verified on v8.0.4):
+    - Accessory checkout targets USERS ONLY (`assigned_user`); asset/location
+      targets fail server-side despite the validation message claiming
+      otherwise. The checkout response payload is null, so the new pivot row
+      must be found by diffing GET /accessories/{id}/checkedout before/after.
+      Checkin addresses the PIVOT row id: POST /accessories/{pivot}/checkin.
+    - Component checkout takes {assigned_to: <asset id>, assigned_qty}. Rows
+      of GET /components/{id}/assets carry `assigned_pivot_id`; checkin is
+      POST /components/{pivot}/checkin with {checkin_qty}.
+    - Consumable checkout takes {assigned_to: <user id>}. There is NO
+      consumable checkin endpoint, and GET /consumables/{id}/users returns
+      HTML-decorated rows without ids — consumption is irreversible and
+      undetectable for drift purposes.
+    - Asset (hardware) checkout takes {checkout_to_type: user|asset|location,
+      assigned_user|assigned_asset|assigned_location}; checkin addresses the
+      asset id. A double checkin fails with "That asset is already checked
+      in." which callers treat as success.
+servers:
+  - url: /api/v1
+tags:
+  - name: accessories
+  - name: consumables
+  - name: components
+  - name: checkouts
+paths:
+  /accessories:
+    get:
+      tags: [accessories]
+      summary: List accessories (supports ?search= and ?limit=/offset=)
+      responses:
+        "200":
+          description: Accessory list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccessoryList" }
+    post:
+      tags: [accessories]
+      summary: Create an accessory (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /accessories/{id}:
+    get:
+      tags: [accessories]
+      summary: >-
+        Get one accessory (raw object). NOTE: the write field min_amt comes
+        back as min_qty from the read serializer.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Accessory detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Accessory" }
+    patch:
+      tags: [accessories]
+      summary: Partially update an accessory (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [accessories]
+      summary: Delete an accessory (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /accessories/{id}/checkedout:
+    get:
+      tags: [checkouts]
+      summary: List the checkout (pivot) rows of an accessory
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Pivot rows; row id is the checkin target
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccessoryCheckoutList" }
+  /accessories/{id}/checkout:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Check one accessory unit out to a user ({assigned_user, note?}).
+        Users only on v8.0.4; the response payload is null (find the new
+        pivot row by before/after diff of /checkedout).
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope (payload null) }
+  /accessories/{pivot}/checkin:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Check an accessory unit back in. The path id is the PIVOT row id from
+        /accessories/{id}/checkedout, not the accessory id.
+      parameters: [{ $ref: "#/components/parameters/pivot" }]
+      responses:
+        "200": { description: Envelope }
+  /consumables:
+    get:
+      tags: [consumables]
+      summary: List consumables (supports ?search= and ?limit=/offset=)
+      responses:
+        "200":
+          description: Consumable list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsumableList" }
+    post:
+      tags: [consumables]
+      summary: Create a consumable (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /consumables/{id}:
+    get:
+      tags: [consumables]
+      summary: Get one consumable (raw object)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Consumable detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Consumable" }
+    patch:
+      tags: [consumables]
+      summary: Partially update a consumable (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [consumables]
+      summary: Delete a consumable (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /consumables/{id}/checkout:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Consume one unit ({assigned_to: user id, note?}). IRREVERSIBLE: no
+        checkin endpoint exists, and /consumables/{id}/users rows carry no
+        usable ids for drift detection.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /components:
+    get:
+      tags: [components]
+      summary: List components (supports ?search= and ?limit=/offset=)
+      responses:
+        "200":
+          description: Component list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComponentList" }
+    post:
+      tags: [components]
+      summary: Create a component (enveloped response, partial payload)
+      responses:
+        "200": { description: Envelope with payload.id }
+  /components/{id}:
+    get:
+      tags: [components]
+      summary: Get one component (raw object)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Component detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Component" }
+    patch:
+      tags: [components]
+      summary: Partially update a component (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+    delete:
+      tags: [components]
+      summary: Delete a component (enveloped response)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /components/{id}/assets:
+    get:
+      tags: [checkouts]
+      summary: List the assets holding units of a component (pivot rows)
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Rows carry assigned_pivot_id (checkin target) and the asset id
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComponentAssetList" }
+  /components/{id}/checkout:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Check component units out to an asset ({assigned_to: asset id,
+        assigned_qty}).
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /components/{pivot}/checkin:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Check component units back in ({checkin_qty}). The path id is the
+        assigned_pivot_id from /components/{id}/assets, not the component id.
+      parameters: [{ $ref: "#/components/parameters/pivot" }]
+      responses:
+        "200": { description: Envelope }
+  /hardware/{id}/checkout:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Check an asset out ({checkout_to_type: user|asset|location,
+        assigned_user|assigned_asset|assigned_location, note?}).
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /hardware/{id}/checkin:
+    post:
+      tags: [checkouts]
+      summary: >-
+        Check an asset back in (addresses the asset id). Double checkin fails
+        with "That asset is already checked in." — treated as success.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200": { description: Envelope }
+  /hardware/{id}/assignment:
+    get:
+      tags: [checkouts]
+      summary: >-
+        NOT a real endpoint — documents the assignment SUBSET of
+        GET /hardware/{id} that the checkout resource reads (the full asset
+        shape belongs to the assets domain). The provider calls
+        GET /hardware/{id} and decodes only these fields.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Assignment subset of the asset detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HardwareAssignment" }
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    pivot:
+      name: pivot
+      in: path
+      required: true
+      description: Checkout (pivot) row id, NOT the object id.
+      schema: { type: integer, format: int64 }
+  schemas:
+    NestedRef:
+      description: 'Nested related-object reference, e.g. {"id": 3, "name": "X"}.'
+      type: object
+      x-go-type: client.Ref
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+    DateObject:
+      description: 'Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.'
+      type: object
+      x-go-type: client.Date
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        date: { type: string }
+        formatted: { type: string }
+    FlexInt:
+      description: Integer the API may serialize as 24, "24" or "24 mo.".
+      type: integer
+      format: int64
+      x-go-type: client.FlexInt
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+    AssignedTarget:
+      description: Polymorphic assignment target of a checkout row.
+      type: object
+      required: [id, type]
+      properties:
+        id: { type: integer, format: int64 }
+        type: { type: string, description: "user, asset or location" }
+    Accessory:
+      type: object
+      required: [id, name, qty, min_qty]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        qty: { $ref: "#/components/schemas/FlexInt" }
+        category: { $ref: "#/components/schemas/NestedRef" }
+        manufacturer: { $ref: "#/components/schemas/NestedRef" }
+        supplier: { $ref: "#/components/schemas/NestedRef" }
+        company: { $ref: "#/components/schemas/NestedRef" }
+        location: { $ref: "#/components/schemas/NestedRef" }
+        model_number: { type: string, nullable: true }
+        order_number: { type: string, nullable: true }
+        purchase_date: { $ref: "#/components/schemas/DateObject" }
+        min_qty:
+          allOf: [{ $ref: "#/components/schemas/FlexInt" }]
+          description: Read-serializer name of the write field min_amt.
+        notes: { type: string, nullable: true }
+    AccessoryList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Accessory" }
+    AccessoryCheckoutRow:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Pivot row id — the checkin target.
+        assigned_to: { $ref: "#/components/schemas/AssignedTarget" }
+    AccessoryCheckoutList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AccessoryCheckoutRow" }
+    Consumable:
+      type: object
+      required: [id, name, qty, min_amt]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        qty: { $ref: "#/components/schemas/FlexInt" }
+        category: { $ref: "#/components/schemas/NestedRef" }
+        company: { $ref: "#/components/schemas/NestedRef" }
+        manufacturer: { $ref: "#/components/schemas/NestedRef" }
+        location: { $ref: "#/components/schemas/NestedRef" }
+        item_no: { type: string, nullable: true }
+        model_number: { type: string, nullable: true }
+        order_number: { type: string, nullable: true }
+        purchase_date: { $ref: "#/components/schemas/DateObject" }
+        min_amt: { $ref: "#/components/schemas/FlexInt" }
+        notes: { type: string, nullable: true }
+    ConsumableList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Consumable" }
+    Component:
+      type: object
+      required: [id, name, qty, min_amt]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        qty: { $ref: "#/components/schemas/FlexInt" }
+        category: { $ref: "#/components/schemas/NestedRef" }
+        supplier: { $ref: "#/components/schemas/NestedRef" }
+        company: { $ref: "#/components/schemas/NestedRef" }
+        location: { $ref: "#/components/schemas/NestedRef" }
+        serial: { type: string, nullable: true }
+        order_number: { type: string, nullable: true }
+        purchase_date: { $ref: "#/components/schemas/DateObject" }
+        min_amt: { $ref: "#/components/schemas/FlexInt" }
+        notes: { type: string, nullable: true }
+    ComponentList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Component" }
+    ComponentAssetRow:
+      type: object
+      required: [assigned_pivot_id, id, qty]
+      properties:
+        assigned_pivot_id:
+          type: integer
+          format: int64
+          description: Pivot row id — the checkin target.
+        id:
+          type: integer
+          format: int64
+          description: Id of the asset holding the units.
+        qty: { $ref: "#/components/schemas/FlexInt" }
+    ComponentAssetList:
+      type: object
+      required: [total, rows]
+      properties:
+        total: { type: integer, format: int64 }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/ComponentAssetRow" }
+    HardwareAssignment:
+      type: object
+      required: [id]
+      properties:
+        id: { type: integer, format: int64 }
+        assigned_to: { $ref: "#/components/schemas/AssignedTarget" }
