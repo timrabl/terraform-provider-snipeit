@@ -23,6 +23,7 @@ import (
 	"github.com/timrabl/terraform-provider-snipeit/internal/client"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/assets"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/organization"
+	"github.com/timrabl/terraform-provider-snipeit/internal/services/people"
 )
 
 // Ensure SnipeITProvider satisfies various provider interfaces.
@@ -126,12 +127,14 @@ func (p *SnipeITProvider) Resources(ctx context.Context) []func() resource.Resou
 	// Every resource lives in a domain package under internal/services.
 	rs := organization.Resources()
 	rs = append(rs, assets.Resources()...)
+	rs = append(rs, people.Resources()...)
 	return rs
 }
 
 func (p *SnipeITProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	ds := organization.DataSources()
 	ds = append(ds, assets.DataSources()...)
+	ds = append(ds, people.DataSources()...)
 	return ds
 }
 

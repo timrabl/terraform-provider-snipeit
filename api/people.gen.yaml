@@ -1,0 +1,7 @@
+# oapi-codegen config for the people domain (models only).
+package: peopleapi
+output: internal/api/people/types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true
