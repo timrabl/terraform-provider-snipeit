@@ -34,7 +34,11 @@ jobs:
       # loopback pinentry avoids gpg-agent, which cannot preset a
       # passphrase for the absent primary key.
       - name: Import release signing subkey
-        run: printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+        run: |
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          echo allow-loopback-pinentry >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
