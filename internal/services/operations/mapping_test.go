@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	operationsapi "github.com/timrabl/terraform-provider-snipeit/internal/api/operations"
+	"github.com/timrabl/terraform-provider-snipeit/internal/snipeitversion"
 )
 
 const maintenanceFixture = `{
@@ -79,7 +80,7 @@ func TestMaintenanceToBodyClearSemantics(t *testing.T) {
 		Notes:          types.StringNull(),  // cleared string -> ""
 		IsWarranty:     types.BoolUnknown(), // unknown computed -> omitted
 	}
-	body := m.toBody()
+	body := m.toBody(snipeitversion.ServerVersion{}) // unknown -> assume newest (8.4+ fields present)
 
 	if body["asset_maintenance_type"] != "Repair" {
 		t.Errorf("asset_maintenance_type = %v", body["asset_maintenance_type"])

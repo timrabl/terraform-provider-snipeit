@@ -34,7 +34,6 @@ resource "snipeit_maintenance" "annual_service" {
 ### Required
 
 - `asset_id` (Number) Id of the asset the maintenance belongs to.
-- `maintenance_type` (String) Type of the maintenance. Common values: `Maintenance`, `Repair`, `Upgrade`, `PAT test`, `Calibration`, `Software Support`, `Hardware Support`. The API does not validate this value.
 - `start_date` (String) Start date in `YYYY-MM-DD` format.
 - `supplier_id` (Number) Id of the supplier performing the maintenance.
 - `title` (String) Title of the maintenance.
@@ -44,6 +43,9 @@ resource "snipeit_maintenance" "annual_service" {
 - `completion_date` (String) Completion date in `YYYY-MM-DD` format.
 - `cost` (String) Maintenance cost as a decimal string, e.g. `1500.50`. Stored normalized; `1500.5`, `1500.50` and `1,500.50` are the same value.
 - `is_warranty` (Boolean) Whether the maintenance is covered by warranty.
+- `maintenance_type` (String) Free-text maintenance type. Common values: `Maintenance`, `Repair`, `Upgrade`, `PAT test`, `Calibration`, `Software Support`, `Hardware Support`. Used on Snipe-IT **< 8.4**; on 8.4+ set `maintenance_type_id` instead.
+- `maintenance_type_id` (Number) Id of the maintenance type. **Required on Snipe-IT >= 8.4**, where free-text types were replaced by maintenance-type entities (id `1` is the seeded default). Ignored on older versions.
+- `name` (String) Name of the maintenance. **Required on Snipe-IT >= 8.4**; defaults to `title` when unset. Ignored on older versions.
 - `notes` (String) Free-form notes.
 
 ### Read-Only
