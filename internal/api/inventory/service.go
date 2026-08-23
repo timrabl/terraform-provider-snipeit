@@ -183,6 +183,17 @@ func (s *Service) SearchComponents(ctx context.Context, search string) (*Compone
 	return &out, nil
 }
 
+// AssetID returns the id of the asset holding the units, tolerating the 8.7
+// response-shape change: Snipe-IT <= 8.4 carries it in a top-level "id"
+// field, while 8.7 dropped that field and moved the id into the nested "name"
+// object. Returns 0 when neither form carries an id.
+func (r ComponentAssetRow) AssetID() int64 {
+	if r.Id != nil && *r.Id != 0 {
+		return *r.Id
+	}
+	return r.Name.IDOrZero()
+}
+
 // ListComponentAssets lists the assets holding units of a component; rows
 // carry the assigned_pivot_id needed for checkin.
 func (s *Service) ListComponentAssets(ctx context.Context, componentID int64) (*ComponentAssetList, error) {

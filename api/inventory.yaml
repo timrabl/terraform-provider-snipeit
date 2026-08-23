@@ -287,6 +287,17 @@ components:
       properties:
         id: { type: integer, format: int64 }
         name: { type: string }
+    FlexRef:
+      description: >-
+        Reference the API serializes either as a bare name string (Snipe-IT
+        <= 8.4) or as a nested {"id": ..., "name": ...} object (8.7+).
+      type: object
+      x-go-type: client.FlexRef
+      x-go-type-import:
+        path: github.com/timrabl/terraform-provider-snipeit/internal/client
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
     DateObject:
       description: 'Nested date, e.g. {"date": "2026-01-10", "formatted": "..."}.'
       type: object
@@ -414,7 +425,7 @@ components:
           items: { $ref: "#/components/schemas/Component" }
     ComponentAssetRow:
       type: object
-      required: [assigned_pivot_id, id, qty]
+      required: [assigned_pivot_id, qty]
       properties:
         assigned_pivot_id:
           type: integer
@@ -423,7 +434,10 @@ components:
         id:
           type: integer
           format: int64
-          description: Id of the asset holding the units.
+          description: >-
+            Id of the asset holding the units (Snipe-IT <= 8.4). 8.7 dropped
+            this top-level field and moved the asset id into name.id.
+        name: { $ref: "#/components/schemas/FlexRef" }
         qty: { $ref: "#/components/schemas/FlexInt" }
     ComponentAssetList:
       type: object

@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
@@ -164,6 +165,37 @@ func StateMoneyPtr(s *string) MoneyValue {
 		return NewMoneyNull()
 	}
 	return NewMoneyValue(client.NormalizeMoney(*s))
+}
+
+// StateMoneyPtrClearAware maps an API money string into state, but when the
+// prior value (plan in Create/Update, state in Read) was null it maps to null
+// regardless of what the API returns. Snipe-IT 8.7 silently ignores attempts
+// to clear purchase_cost on inventory items (accessory/consumable/component)
+// and keeps echoing the previous value on every read; a plain mapping would
+// then read the stale value back into a field the user cleared and fail with
+// "inconsistent result after apply". The cost, as with StateStringPtrPreserve,
+// is that a value set out-of-band while Terraform holds the field null is not
+// detected. On 8.0.4 the clear works server-side, so prior-null already maps to
+// null and this is a no-op.
+func StateMoneyPtrClearAware(s *string, prior MoneyValue) MoneyValue {
+	if prior.IsNull() || prior.IsUnknown() {
+		return NewMoneyNull()
+	}
+	return StateMoneyPtr(s)
+}
+
+// StateDateClearAware maps a nested API date into state with the same
+// prior-null-wins behavior as StateMoneyPtrClearAware, for purchase_date on the
+// inventory items (8.7 ignores clearing it the same way it ignores
+// purchase_cost).
+func StateDateClearAware(d *client.Date, prior types.String) types.String {
+	if prior.IsNull() || prior.IsUnknown() {
+		return types.StringNull()
+	}
+	if d != nil && d.Date != "" {
+		return types.StringValue(d.Date)
+	}
+	return types.StringNull()
 }
 
 // BodyMoney sends the normalized plain-decimal amount, or an explicit JSON

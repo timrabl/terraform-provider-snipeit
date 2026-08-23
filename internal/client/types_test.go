@@ -85,6 +85,33 @@ func TestRefIDOrZero(t *testing.T) {
 	}
 }
 
+func TestFlexRefUnmarshal(t *testing.T) {
+	cases := map[string]struct {
+		wantID   int64
+		wantName string
+	}{
+		// 8.7 nested-object form: id lives inside the object.
+		`{"id": 44, "type": "asset", "name": "#a"}`: {44, "#a"},
+		// Pre-8.7 bare-string form: no id, name is the string.
+		`"some-asset"`: {0, "some-asset"},
+		// Absent / null.
+		`null`: {0, ""},
+	}
+	for in, want := range cases {
+		var got FlexRef
+		if err := json.Unmarshal([]byte(in), &got); err != nil {
+			t.Fatalf("%s: %v", in, err)
+		}
+		if got.IDOrZero() != want.wantID || got.Name != want.wantName {
+			t.Errorf("%s -> {ID:%d Name:%q}, want {ID:%d Name:%q}",
+				in, got.IDOrZero(), got.Name, want.wantID, want.wantName)
+		}
+	}
+	if got := (*FlexRef)(nil).IDOrZero(); got != 0 {
+		t.Errorf("nil FlexRef = %d", got)
+	}
+}
+
 func TestFlexStringUnmarshal(t *testing.T) {
 	cases := map[string]string{
 		`"1"`:   "1",   // string form (<= 8.0)

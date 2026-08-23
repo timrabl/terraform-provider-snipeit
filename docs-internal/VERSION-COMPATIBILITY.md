@@ -35,26 +35,26 @@ Last run: 2026-08-23.
 | entity-by-name lookups (data sources) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | hardware audit due/overdue (data sources) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **people** | | | | | | |
-| `snipeit_user` | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `snipeit_group` | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| user/group lookups (data sources) | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| `snipeit_user` | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| `snipeit_group` | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| user/group lookups (data sources) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | **licensing** | | | | | | |
 | `snipeit_license` (+ data source) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_license_seat` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **inventory** | | | | | | |
-| `snipeit_accessory` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `snipeit_consumable` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `snipeit_component` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `snipeit_accessory` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `snipeit_consumable` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `snipeit_component` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_accessory_checkout` | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| `snipeit_component_checkout` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| `snipeit_component_checkout` | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | `snipeit_consumable_checkout` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **customfields** | | | | | | |
 | `snipeit_fieldset` (+ data source) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `snipeit_field` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `snipeit_field` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_field` (data source) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_field_fieldset_association` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **operations** | | | | | | |
-| `snipeit_maintenance` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| `snipeit_maintenance` | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | activity reports (data source) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## Per-version tally (35 acceptance tests)
@@ -66,11 +66,12 @@ Last run: 2026-08-23.
 | 7.1.16 | ✅ | **35 / 35** | fully tracked (manufacturer notes fixed) |
 | **8.0.4** | ✅ | **35 / 35** | **build target — full support** |
 | 8.4.1 | ✅ | 30 / 35 | forward drift starts |
-| 8.7.2 | ✅ | 26 / 35 | current latest; most drift |
+| 8.7.2 | ✅ | **35 / 35** | current latest; fully tracked (see below) |
 
-The shape is the important part: the provider peaks at its build target and
-degrades in **both** directions. Backward drift is mild until 6.0; forward
-drift is real from 8.4 onward because Snipe-IT's own API changed after 8.0.
+The provider was written against 8.0.x and now also tracks 8.7.x (the current
+latest) and 7.1.x at full parity; the remaining drift is backward, mild until
+6.0. Forward drift from 8.4+ was real (Snipe-IT's own API changed after 8.0)
+but is now absorbed by version gating and tolerant-read mappers.
 
 ## Notable breakages, with the real error
 
@@ -98,45 +99,65 @@ drift is real from 8.4 onward because Snipe-IT's own API changed after 8.0.
 
 ### Forward (newer than the build target)
 
-- **`snipeit_user` / `snipeit_group` — fail on 8.4 and 8.7.** `snipe-it:
-  decoding GET /groups/{id} response: json: cannot unmarshal number into ...`.
-  The **groups response shape changed in 8.4+**: a field the provider decodes
-  as one type now comes back as a number. Group read-after-create fails, and
-  users fail with it. This is the most consequential forward break — it is
-  broken at *both* ends of the range for different reasons.
-- **`snipeit_maintenance` — fails on 8.4 and 8.7.** 8.4: `name: The name field
-  is required`; 8.7: `maintenance_type_id: The maintenance type id ...`.
-  Maintenances gained required fields (a `name`, and `maintenance_type_id`
-  replacing the old free-text type) that the provider does not send.
-- **`snipeit_component_checkout` — fails on 8.4 and 8.7.** `The checkout
-  succeeded but its pivot row could not be found`. The component checkout /
-  assets response shape changed in 8.4+, so the provider cannot locate the
-  pivot id it needs for checkin.
-- **`snipeit_accessory` / `snipeit_consumable` / `snipeit_component` — fail on
-  8.7 only.** `inconsistent result after apply: .order_number: was
-  cty.StringVal("...") but now ...`. 8.7 changed how `order_number` is echoed.
-  These pass on 8.4, so this drift landed between 8.4 and 8.7.
-- **`snipeit_field` — fails on 8.7 only.** `Unable to update field`: the custom
-  fields API changed again in 8.7.
+All the forward breakages that were open on 8.7.2 are now tracked, and 8.7.2
+runs the full suite 35/35. The history, and how each was resolved:
+
+- **`snipeit_user` / `snipeit_group` — was failing on 8.4/8.7, now fixed.** The
+  groups response shape changed in 8.4+ (permission values became numbers);
+  the `FlexString` tolerant decode plus version gating (v0.3.0) resolved it.
+- **`snipeit_maintenance` — was failing on 8.4/8.7, now fixed.** Maintenances
+  gained required fields (`name`, and `maintenance_type_id` replacing the
+  free-text type); the maintenance body is now version-gated (v0.3.0).
+- **`snipeit_component_checkout` — was failing on 8.4/8.7, now fixed.** 8.7
+  dropped the top-level `id` from the `/components/{id}/assets` rows and moved
+  the asset id into a nested `name` object; a new `client.FlexRef` tolerant
+  type reads the asset id from either shape (tolerant-read, no gating).
+- **`snipeit_accessory` / `snipeit_consumable` / `snipeit_component` — was
+  failing on 8.7, now fixed.** Two distinct 8.7 drifts: `order_number` stopped
+  echoing back (handled earlier by `StateStringPtrPreserve`), and clearing
+  `purchase_cost` / `purchase_date` on update is silently ignored by the
+  server, which keeps echoing the old value. The clear-aware state mappers keep
+  the field null once the user has cleared it (tolerant-read, no gating). Note:
+  on 8.7 these two fields are effectively immutable after create — the update
+  endpoint ignores changes to them, not only clears — so changing (rather than
+  clearing) an already-set value is not honored on 8.7.
+- **`snipeit_field` — was failing on 8.7, now fixed.** 8.7 validates the field
+  `element` against its `format`: a `listbox` is only valid with a compatible
+  format. Switching a text/IP field to a listbox must now also set a compatible
+  format; the provider surfaces the server's validation error verbatim when it
+  does not.
+- **`snipeit_hardware_checkout` — was failing on 8.7, now fixed.** Not a
+  checkout drift: 8.7 returns HTTP 500 on *concurrent* `POST /hardware`, a
+  server-side race in asset creation. The checkout resource is unaffected; the
+  acceptance test now serializes its two asset creates so it exercises the
+  checkout rather than the unrelated concurrency bug.
+
+Not re-measured this round: **8.4.1** and **6.0.14** are not part of the gating
+version-matrix (which runs 6.4.2 / 7.1.16 / 8.0.4 / 8.7.2), so their columns
+above predate the v0.3.0 gating work and the 8.7 fixes; several of their `❌`
+cells are likely stale.
 
 ## How many versions are cleanly supported
 
-- **Fully supported: 8.0.x** (the build target) and **7.1.x**, both 35/35.
-- **Effectively supported: 6.4.x** (34/35) with one documented gap (accessory
+- **Fully supported (35/35): 8.0.x** (the build target), **8.7.x** (current
+  latest), and **7.1.x**.
+- **Effectively supported: 6.4.x** with one documented gap (accessory
   checkout, which differs before 7.x).
-- **Usable with caveats: 6.0.x** (28/35) and **8.4.x** (30/35) — most
-  resources work, but the listed families are broken.
-- **Most drift: 8.7.x** (26/35), the current latest (tracked separately).
+- **Not in the gating matrix: 6.0.x and 8.4.x** — not re-measured this round;
+  their rows above are historical.
 
-Net: the provider cleanly covers the **7.1 – 8.0** band it was written against,
-works well back to 6.4, and needs attention to track Snipe-IT 8.4+.
+Net: the provider cleanly covers **7.1 through 8.7** (the four gating-matrix
+versions minus 6.4), and works well back to 6.4.
 
-## Implication for the provider (measurement only)
+## Implication for the provider
 
-The forward breakages are concentrated and API-driven (groups shape,
-maintenance required fields, checkout pivots, `order_number` echo). That is
-exactly the situation where **server-version detection + capability gating**
-pays off: detect the Snipe-IT version at provider configure time and adapt the
-group decode, the maintenance body, and the checkout-pivot lookup per version,
-rather than assuming the 8.0 shapes. This document is measurement only; no
-gating is implemented here. It is the evidence base for that future decision.
+The forward breakages were concentrated and API-driven (groups shape,
+maintenance required fields, checkout pivots, `order_number` echo,
+`purchase_cost` clear, field element/format validation). Server-version
+detection plus capability gating (`internal/snipeitversion`) is now in place:
+the client detects the Snipe-IT version at configure time, resources gate the
+genuinely different requests (group decode, maintenance body) on it, and pure
+response-shape drift is absorbed with tolerant-read state mappers and custom
+types (`FlexString`, `FlexRef`, `StateStringPtrPreserve`, the clear-aware money
+and date mappers) that need no gating. The version matrix gates 7.1.16, 8.0.4
+and 8.7.2 as the versions the suite passes 35/35.

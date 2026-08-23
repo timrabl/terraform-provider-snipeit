@@ -27,6 +27,46 @@ func (r *Ref) IDOrZero() int64 {
 	return r.ID
 }
 
+// FlexRef is a reference the API serializes either as a bare name string
+// (older Snipe-IT) or as a nested {"id": ..., "name": ...} object (8.7+). It
+// exists because the component-asset pivot rows moved the referenced asset id
+// out of a top-level "id" field and into a nested "name" object in 8.7. Only
+// the id and name are retained; a bare-string form yields id 0.
+type FlexRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// IDOrZero returns the referenced id, or 0 when the reference is absent or was
+// serialized as a bare string.
+func (r *FlexRef) IDOrZero() int64 {
+	if r == nil {
+		return 0
+	}
+	return r.ID
+}
+
+func (r *FlexRef) UnmarshalJSON(data []byte) error {
+	trimmed := strings.TrimSpace(string(data))
+	if trimmed == "" || trimmed == "null" {
+		return nil
+	}
+	// Bare-string form (older versions): keep the name, leave id zero.
+	if trimmed[0] == '"' {
+		return json.Unmarshal(data, &r.Name)
+	}
+	// Nested-object form (8.7+): {"id": ..., "name": ..., ...}.
+	var obj struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+	r.ID, r.Name = obj.ID, obj.Name
+	return nil
+}
+
 // DateTime is the nested timestamp shape {"datetime": "...", "formatted": "..."}
 // used for created_at/updated_at and similar fields.
 type DateTime struct {

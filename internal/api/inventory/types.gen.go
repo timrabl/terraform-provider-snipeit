@@ -110,8 +110,11 @@ type ComponentAssetRow struct {
 	// AssignedPivotId Pivot row id — the checkin target.
 	AssignedPivotId int64 `json:"assigned_pivot_id"`
 
-	// Id Id of the asset holding the units.
-	Id int64 `json:"id"`
+	// Id Id of the asset holding the units (Snipe-IT <= 8.4). 8.7 dropped this top-level field and moved the asset id into name.id.
+	Id *int64 `json:"id,omitempty"`
+
+	// Name Reference the API serializes either as a bare name string (Snipe-IT <= 8.4) or as a nested {"id": ..., "name": ...} object (8.7+).
+	Name *FlexRef `json:"name,omitempty"`
 
 	// Qty Integer the API may serialize as 24, "24" or "24 mo.".
 	Qty FlexInt `json:"qty"`
@@ -165,6 +168,9 @@ type DateObject = client.Date
 
 // FlexInt Integer the API may serialize as 24, "24" or "24 mo.".
 type FlexInt = client.FlexInt
+
+// FlexRef Reference the API serializes either as a bare name string (Snipe-IT <= 8.4) or as a nested {"id": ..., "name": ...} object (8.7+).
+type FlexRef = client.FlexRef
 
 // HardwareAssignment defines model for HardwareAssignment.
 type HardwareAssignment struct {

@@ -157,12 +157,12 @@ func (m *ComponentResourceModel) fromAPI(api *inventoryapi.Component) {
 	m.OrderNumber = tfutil.StateStringPtrPreserve(api.OrderNumber, m.OrderNumber)
 	m.MinAmt = tfutil.StateOptIntKeep(int64(api.MinAmt), m.MinAmt)
 	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
-	if api.PurchaseDate != nil && api.PurchaseDate.Date != "" {
-		m.PurchaseDate = types.StringValue(api.PurchaseDate.Date)
-	} else {
-		m.PurchaseDate = types.StringNull()
-	}
-	m.PurchaseCost = tfutil.StateMoneyPtr(api.PurchaseCost)
+	// Snipe-IT 8.7 ignores clearing purchase_date/purchase_cost on inventory
+	// items and keeps echoing the old value; the clear-aware mappers keep the
+	// field null once the user has cleared it (prior null) so the apply stays
+	// consistent. On 8.0.4 the clear works server-side, so this is a no-op.
+	m.PurchaseDate = tfutil.StateDateClearAware(api.PurchaseDate, m.PurchaseDate)
+	m.PurchaseCost = tfutil.StateMoneyPtrClearAware(api.PurchaseCost, m.PurchaseCost)
 }
 
 func (r *ComponentResource) read(ctx context.Context, id int64, data *ComponentResourceModel) error {

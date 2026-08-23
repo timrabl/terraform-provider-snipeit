@@ -76,6 +76,12 @@ resource "snipeit_hardware" "target" {
   asset_tag = "%[1]s-0002"
   model_id  = snipeit_model.test.id
   status_id = snipeit_status_label.test.id
+
+  # Serialize the two asset creates: Snipe-IT 8.7 returns HTTP 500 on
+  # concurrent POST /hardware (a server-side race in asset creation), and
+  # Terraform would otherwise create source and target in parallel. This
+  # depends_on isolates the checkout under test from that unrelated 8.7 bug.
+  depends_on = [snipeit_hardware.source]
 }
 
 resource "snipeit_hardware_checkout" "test" {
