@@ -45,6 +45,11 @@ resource "snipeit_manufacturer" "test" {
 				ResourceName:      "snipeit_manufacturer.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// Snipe-IT <= 7.x never echoes manufacturer notes back (the
+				// transformer omits the field), so a fresh import cannot
+				// recover it. Same write-only-on-old-versions class as
+				// order_number on the inventory resources.
+				ImportStateVerifyIgnore: []string{"notes"},
 			},
 			// Update and Read testing
 			{

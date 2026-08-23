@@ -25,7 +25,7 @@ Last run: 2026-08-23.
 | `snipeit_supplier` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | organization lookups (data sources) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **assets** | | | | | | |
-| `snipeit_manufacturer` | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| `snipeit_manufacturer` | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_category` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_status_label` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `snipeit_model` (incl. explicit-zero eol) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -62,8 +62,8 @@ Last run: 2026-08-23.
 | Version | Boots | Passing | Read |
 |---|:---:|:---:|---|
 | 6.0.14 | ✅ | 28 / 35 | oldest tested; several gaps |
-| 6.4.2 | ✅ | 33 / 35 | good, two known gaps |
-| 7.1.16 | ✅ | 34 / 35 | near-perfect |
+| 6.4.2 | ✅ | 34 / 35 | one known gap (accessory checkout) |
+| 7.1.16 | ✅ | **35 / 35** | fully tracked (manufacturer notes fixed) |
 | **8.0.4** | ✅ | **35 / 35** | **build target — full support** |
 | 8.4.1 | ✅ | 30 / 35 | forward drift starts |
 | 8.7.2 | ✅ | 26 / 35 | current latest; most drift |
@@ -76,12 +76,13 @@ drift is real from 8.4 onward because Snipe-IT's own API changed after 8.0.
 
 ### Backward (older than the build target)
 
-- **`snipeit_manufacturer` — fails on all of 6.0 / 6.4 / 7.1.**
-  `Provider produced inconsistent result after apply: .notes: was
-  cty.StringVal("...") but now null`. Snipe-IT ≤ 7.x does not echo the
-  manufacturer `notes` field back the way 8.x does, so the value the provider
-  writes does not survive the re-read. This is the single most backward-visible
-  break and the only failure on 7.1.16.
+- **`snipeit_manufacturer` — was failing on 6.0 / 6.4 / 7.1, now fixed on 6.4
+  and 7.1.** Snipe-IT ≤ 7.x never echoes the manufacturer `notes` field back
+  (the API transformer omits it), so it did not survive a re-read (fixed
+  earlier with `StateStringPtrPreserve`) or a fresh import. The import step now
+  ignores `notes` the same way `order_number` is ignored on the inventory
+  resources, so 7.1.16 is fully clean and 6.4.2 is left with only the
+  accessory-checkout gap.
 - **`snipeit_company` — fails on 6.0 only.** Same inconsistent-result class on
   a field 6.0 serializes differently.
 - **`snipeit_hardware` data source — fails on 6.0 only.** The lookup response
@@ -89,8 +90,11 @@ drift is real from 8.4 onward because Snipe-IT's own API changed after 8.0.
 - **`snipeit_user` / `snipeit_group` — fail on 6.0.** `snipe-it API error
   (HTTP 500): Server Error` on group create: the groups/permissions API is
   immature in 6.0. Users fail as a consequence (they reference groups).
-- **`snipeit_accessory_checkout` — fails on 6.0 and 6.4.** `Unable to check
-  out accessory`: the accessory checkout endpoint/pivot differs before 7.x.
+- **`snipeit_accessory_checkout` — still fails on 6.0 and 6.4.** On Snipe-IT
+  < 7.0 the checkout body expects `assigned_to`, not `assigned_user` (which
+  7.x+ requires); the provider sends `assigned_user`, so the server returns
+  "That user is invalid." Fixing it needs a version gate (send `assigned_to`
+  below 7.0), which would make 6.4.2 fully clean. Left open for now.
 
 ### Forward (newer than the build target)
 
@@ -117,13 +121,12 @@ drift is real from 8.4 onward because Snipe-IT's own API changed after 8.0.
 
 ## How many versions are cleanly supported
 
-- **Fully supported: 8.0.x** (the build target, 35/35).
-- **Effectively supported: 7.1.x** (34/35 — only the manufacturer `notes`
-  round-trip), and **6.4.x** with two documented gaps (manufacturer,
-  accessory checkout).
+- **Fully supported: 8.0.x** (the build target) and **7.1.x**, both 35/35.
+- **Effectively supported: 6.4.x** (34/35) with one documented gap (accessory
+  checkout, which differs before 7.x).
 - **Usable with caveats: 6.0.x** (28/35) and **8.4.x** (30/35) — most
   resources work, but the listed families are broken.
-- **Most drift: 8.7.x** (26/35), the current latest.
+- **Most drift: 8.7.x** (26/35), the current latest (tracked separately).
 
 Net: the provider cleanly covers the **7.1 – 8.0** band it was written against,
 works well back to 6.4, and needs attention to track Snipe-IT 8.4+.
