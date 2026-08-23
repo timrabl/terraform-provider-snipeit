@@ -165,6 +165,10 @@ components:
         asset_maintenance_type:
           type: string
           description: Not validated server-side; any string is stored.
+        name:
+          type: string
+          nullable: true
+          description: Maintenance name (Snipe-IT 8.4+; absent on older versions).
         title: { type: string }
         start_date:
           $ref: "#/components/schemas/NestedDate"

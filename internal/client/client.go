@@ -29,6 +29,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/timrabl/terraform-provider-snipeit/internal/snipeitversion"
 )
 
 // ErrNotFound is returned when the API reports that the requested object does
@@ -44,6 +46,32 @@ type Client struct {
 	// retryDelay computes the backoff before retry number attempt+1; it is a
 	// field only so unit tests can eliminate the wait.
 	retryDelay func(attempt int) time.Duration
+
+	// ServerVersion is the detected Snipe-IT version (set by the provider at
+	// Configure time via DetectVersion). Its zero value is "unknown".
+	ServerVersion snipeitversion.ServerVersion
+}
+
+// DetectVersion fetches GET /api/v1/version and parses the reported version.
+// A missing endpoint (older servers) or any error is returned so the caller
+// can warn and continue in version-unknown mode; the client's ServerVersion
+// is set on success.
+func (c *Client) DetectVersion(ctx context.Context) (snipeitversion.ServerVersion, error) {
+	var out struct {
+		Version string `json:"version"`
+	}
+	if err := c.Get(ctx, "/version", &out); err != nil {
+		return snipeitversion.ServerVersion{}, err
+	}
+	if out.Version == "" {
+		return snipeitversion.ServerVersion{}, fmt.Errorf("snipe-it: /version returned no version")
+	}
+	sv, err := snipeitversion.Parse(out.Version)
+	if err != nil {
+		return snipeitversion.ServerVersion{}, err
+	}
+	c.ServerVersion = sv
+	return sv, nil
 }
 
 // defaultRetryDelay backs off progressively; the API limiter window is per

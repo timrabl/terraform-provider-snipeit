@@ -28,6 +28,7 @@ import (
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/operations"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/organization"
 	"github.com/timrabl/terraform-provider-snipeit/internal/services/people"
+	"github.com/timrabl/terraform-provider-snipeit/internal/snipeitversion"
 )
 
 // Ensure SnipeITProvider satisfies various provider interfaces.
@@ -121,6 +122,24 @@ func (p *SnipeITProvider) Configure(ctx context.Context, req provider.ConfigureR
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create Snipe-IT API client", err.Error())
 		return
+	}
+
+	// Detect the server version so resources can gate version-specific
+	// behavior. Detection is best-effort: an older server without the
+	// /version endpoint, or any transient failure, leaves the version
+	// "unknown" (assume-newest) and only warns.
+	sv, verr := c.DetectVersion(ctx)
+	switch {
+	case verr != nil:
+		resp.Diagnostics.AddWarning(
+			"Could not detect the Snipe-IT server version",
+			"Version-specific behavior will assume the newest known version. "+
+				"Detection error: "+verr.Error())
+	case !sv.IsSupported():
+		resp.Diagnostics.AddWarning(
+			"Snipe-IT server version is below the supported floor",
+			fmt.Sprintf("Detected %s; the provider is tested against %s and newer. "+
+				"Some resources may not work.", sv, snipeitversion.MinSupported))
 	}
 
 	resp.DataSourceData = c

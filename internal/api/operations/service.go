@@ -21,6 +21,7 @@ import (
 	"net/url"
 
 	"github.com/timrabl/terraform-provider-snipeit/internal/client"
+	"github.com/timrabl/terraform-provider-snipeit/internal/snipeitversion"
 )
 
 // Service exposes typed access to the operations domain endpoints.
@@ -32,6 +33,9 @@ type Service struct {
 func New(c *client.Client) *Service {
 	return &Service{c: c}
 }
+
+// ServerVersion exposes the detected Snipe-IT version for version gating.
+func (s *Service) ServerVersion() snipeitversion.ServerVersion { return s.c.ServerVersion }
 
 // created is the partial payload of a create envelope.
 type created struct {

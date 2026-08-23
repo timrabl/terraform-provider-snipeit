@@ -45,6 +45,7 @@ resource "snipeit_maintenance" "test" {
   asset_id         = snipeit_hardware.test.id
   supplier_id      = snipeit_supplier.test.id
   maintenance_type = "Maintenance"
+  maintenance_type_id = 1
   title            = "Annual service"
   start_date       = "2026-08-01"
   cost             = "1500.50"
@@ -65,9 +66,10 @@ resource "snipeit_maintenance" "test" {
 				),
 			},
 			{
-				ResourceName:      "snipeit_maintenance.test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "snipeit_maintenance.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"maintenance_type_id", "name"},
 			},
 			{
 				Config: maintenanceBaseConfig(prefix) + `
@@ -75,6 +77,7 @@ resource "snipeit_maintenance" "test" {
   asset_id         = snipeit_hardware.test.id
   supplier_id      = snipeit_supplier.test.id
   maintenance_type = "Repair"
+  maintenance_type_id = 1
   title            = "Board swap"
   start_date       = "2026-08-05"
 }

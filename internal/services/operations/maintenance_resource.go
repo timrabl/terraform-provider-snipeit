@@ -19,6 +19,7 @@ import (
 
 	operationsapi "github.com/timrabl/terraform-provider-snipeit/internal/api/operations"
 	"github.com/timrabl/terraform-provider-snipeit/internal/client"
+	"github.com/timrabl/terraform-provider-snipeit/internal/snipeitversion"
 	"github.com/timrabl/terraform-provider-snipeit/internal/tfutil"
 )
 
@@ -39,16 +40,18 @@ type MaintenanceResource struct {
 
 // MaintenanceResourceModel describes the resource data model.
 type MaintenanceResourceModel struct {
-	ID             types.Int64       `tfsdk:"id"`
-	AssetID        types.Int64       `tfsdk:"asset_id"`
-	SupplierID     types.Int64       `tfsdk:"supplier_id"`
-	Type           types.String      `tfsdk:"maintenance_type"`
-	Title          types.String      `tfsdk:"title"`
-	StartDate      types.String      `tfsdk:"start_date"`
-	CompletionDate types.String      `tfsdk:"completion_date"`
-	IsWarranty     types.Bool        `tfsdk:"is_warranty"`
-	Cost           tfutil.MoneyValue `tfsdk:"cost"`
-	Notes          types.String      `tfsdk:"notes"`
+	ID                types.Int64       `tfsdk:"id"`
+	AssetID           types.Int64       `tfsdk:"asset_id"`
+	SupplierID        types.Int64       `tfsdk:"supplier_id"`
+	Type              types.String      `tfsdk:"maintenance_type"`
+	MaintenanceTypeID types.Int64       `tfsdk:"maintenance_type_id"`
+	Name              types.String      `tfsdk:"name"`
+	Title             types.String      `tfsdk:"title"`
+	StartDate         types.String      `tfsdk:"start_date"`
+	CompletionDate    types.String      `tfsdk:"completion_date"`
+	IsWarranty        types.Bool        `tfsdk:"is_warranty"`
+	Cost              tfutil.MoneyValue `tfsdk:"cost"`
+	Notes             types.String      `tfsdk:"notes"`
 }
 
 func (r *MaintenanceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -75,10 +78,22 @@ func (r *MaintenanceResource) Schema(ctx context.Context, req resource.SchemaReq
 				Required:            true,
 			},
 			"maintenance_type": schema.StringAttribute{
-				MarkdownDescription: "Type of the maintenance. Common values: `Maintenance`, `Repair`, " +
+				MarkdownDescription: "Free-text maintenance type. Common values: `Maintenance`, `Repair`, " +
 					"`Upgrade`, `PAT test`, `Calibration`, `Software Support`, `Hardware Support`. " +
-					"The API does not validate this value.",
-				Required: true,
+					"Used on Snipe-IT **< 8.4**; on 8.4+ set `maintenance_type_id` instead.",
+				Optional: true,
+			},
+			"maintenance_type_id": schema.Int64Attribute{
+				MarkdownDescription: "Id of the maintenance type. **Required on Snipe-IT >= 8.4**, " +
+					"where free-text types were replaced by maintenance-type entities " +
+					"(id `1` is the seeded default). Ignored on older versions.",
+				Optional: true,
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Name of the maintenance. **Required on Snipe-IT >= 8.4**; " +
+					"defaults to `title` when unset. Ignored on older versions.",
+				Optional: true,
+				Computed: true,
 			},
 			"title": schema.StringAttribute{
 				MarkdownDescription: "Title of the maintenance.",
@@ -118,13 +133,23 @@ func (r *MaintenanceResource) Configure(ctx context.Context, req resource.Config
 	}
 }
 
-func (m *MaintenanceResourceModel) toBody() map[string]any {
+func (m *MaintenanceResourceModel) toBody(sv snipeitversion.ServerVersion) map[string]any {
 	body := map[string]any{
-		"asset_id":               m.AssetID.ValueInt64(),
-		"supplier_id":            m.SupplierID.ValueInt64(),
-		"asset_maintenance_type": m.Type.ValueString(),
-		"title":                  m.Title.ValueString(),
-		"start_date":             m.StartDate.ValueString(),
+		"asset_id":    m.AssetID.ValueInt64(),
+		"supplier_id": m.SupplierID.ValueInt64(),
+		"title":       m.Title.ValueString(),
+		"start_date":  m.StartDate.ValueString(),
+	}
+	tfutil.BodyString(body, "asset_maintenance_type", m.Type)
+	if sv.AtLeast(snipeitversion.V8_4_0) {
+		// 8.4+ replaced the free-text type with a maintenance-type reference
+		// and made name required.
+		name := m.Name.ValueString()
+		if name == "" {
+			name = m.Title.ValueString()
+		}
+		body["name"] = name
+		tfutil.BodyNullableInt(body, "maintenance_type_id", m.MaintenanceTypeID)
 	}
 	tfutil.BodyNullableString(body, "completion_date", m.CompletionDate)
 	tfutil.BodyString(body, "notes", m.Notes)
@@ -137,8 +162,18 @@ func (m *MaintenanceResourceModel) fromAPI(api *operationsapi.Maintenance) {
 	m.ID = types.Int64Value(api.Id)
 	m.AssetID = types.Int64Value(api.Asset.IDOrZero())
 	m.SupplierID = types.Int64Value(api.Supplier.IDOrZero())
-	m.Type = types.StringValue(api.AssetMaintenanceType)
+	m.Type = tfutil.StateStringKeep(api.AssetMaintenanceType, m.Type)
 	m.Title = types.StringValue(api.Title)
+	// name is Computed: prefer what the API returns (8.4+), else keep the
+	// configured value, else fall back to title.
+	switch {
+	case api.Name != nil && *api.Name != "":
+		m.Name = types.StringValue(*api.Name)
+	case !m.Name.IsNull() && !m.Name.IsUnknown() && m.Name.ValueString() != "":
+		// keep configured value
+	default:
+		m.Name = types.StringValue(api.Title)
+	}
 	m.IsWarranty = types.BoolValue(bool(api.IsWarranty))
 	m.Cost = tfutil.StateMoneyPtr(api.Cost)
 	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
@@ -170,7 +205,7 @@ func (r *MaintenanceResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	id, err := r.svc.CreateMaintenance(ctx, data.toBody())
+	id, err := r.svc.CreateMaintenance(ctx, data.toBody(r.svc.ServerVersion()))
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create maintenance", err.Error())
 		return
@@ -208,7 +243,7 @@ func (r *MaintenanceResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	id := data.ID.ValueInt64()
-	if err := r.svc.UpdateMaintenance(ctx, id, data.toBody()); err != nil {
+	if err := r.svc.UpdateMaintenance(ctx, id, data.toBody(r.svc.ServerVersion())); err != nil {
 		resp.Diagnostics.AddError("Unable to update maintenance", err.Error())
 		return
 	}

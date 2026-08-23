@@ -68,7 +68,10 @@ type Maintenance struct {
 
 	// IsWarranty Boolean the API returns as true/false, 0/1 or "0"/"1".
 	IsWarranty FlexBool `json:"is_warranty"`
-	Notes      *string  `json:"notes,omitempty"`
+
+	// Name Maintenance name (Snipe-IT 8.4+; absent on older versions).
+	Name  *string `json:"name,omitempty"`
+	Notes *string `json:"notes,omitempty"`
 
 	// StartDate Nested date shape {"date": "2020-01-01", "formatted": "..."}.
 	StartDate *NestedDate `json:"start_date,omitempty"`
