@@ -57,16 +57,24 @@ document every known quirk.
 - The full Snipe-IT version matrix
   ([`version-matrix.yml`](.github/workflows/version-matrix.yml)) boots one
   disposable instance per Snipe-IT version and runs the acceptance suite
-  against each. It runs on the release-please release PR (where it is the
-  release gate), weekly on a schedule (which opens a `matrix-drift` issue on new
-  breakage), and on demand via `workflow_dispatch`. Only the build target
-  (`gate: true`) blocks the release; the other versions run for visibility but
-  do not gate, because the provider has documented, expected drift on them (see
+  against each. It is the release gate on the release-please PR, and also runs
+  weekly on a schedule (which opens a `matrix-drift` issue on new breakage) and
+  on demand via `workflow_dispatch`. The gating versions (`gate: true`) must
+  pass for the gate to go green; the others run for visibility but do not gate,
+  because the provider has documented, expected drift on them (see
   [`docs-internal/VERSION-COMPATIBILITY.md`](docs-internal/VERSION-COMPATIBILITY.md)).
   Flip a version's gate to `true` once the provider supports it cleanly.
-- Releasing: merge the release-please PR once the matrix is green. That tags the
-  release, and [`release-please.yml`](.github/workflows/release-please.yml) runs
-  goreleaser to publish it. No manual tagging or branching.
+- **Dispatch discipline:** the release-please PR is opened by the bot using the
+  default `GITHUB_TOKEN`, and GitHub does not trigger workflows from
+  token-created events. So the matrix does **not** start on its own on that PR
+  even though it is wired to `pull_request`. Before merging a release PR,
+  dispatch the version matrix manually against the PR branch
+  (Actions -> Version matrix -> Run workflow) and wait for the gate to go
+  green. Do not merge on the strength of the fast CI alone.
+- Releasing: once the dispatched matrix is green, merge the release-please PR.
+  That tags the release, and
+  [`release-please.yml`](.github/workflows/release-please.yml) runs goreleaser
+  to publish it. No manual tagging or branching.
 
 ## Security issues
 

@@ -3,12 +3,12 @@
 page_title: "snipeit_component Resource - snipeit"
 subcategory: ""
 description: |-
-  Manages a component in Snipe-IT. purchase_cost is intentionally not supported (the API returns it locale-formatted, which does not round-trip stably).
+  Manages a component in Snipe-IT.
 ---
 
 # snipeit_component (Resource)
 
-Manages a component in Snipe-IT. `purchase_cost` is intentionally not supported (the API returns it locale-formatted, which does not round-trip stably).
+Manages a component in Snipe-IT.
 
 ## Example Usage
 

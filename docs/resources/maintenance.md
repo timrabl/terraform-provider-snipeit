@@ -4,14 +4,11 @@ page_title: "snipeit_maintenance Resource - snipeit"
 subcategory: ""
 description: |-
   Manages an asset maintenance record in Snipe-IT.
-  ~> The cost field is intentionally not supported: the API returns it formatted according to the instance locale, which cannot round-trip stably through Terraform state.
 ---
 
 # snipeit_maintenance (Resource)
 
 Manages an asset maintenance record in Snipe-IT.
-
-~> The `cost` field is intentionally not supported: the API returns it formatted according to the instance locale, which cannot round-trip stably through Terraform state.
 
 ## Example Usage
 

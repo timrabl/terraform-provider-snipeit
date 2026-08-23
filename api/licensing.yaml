@@ -18,8 +18,8 @@ info:
     Licensing-specific quirks (live-verified):
     - The write field `serial` is echoed back as `product_key` in GET
       responses.
-    - `purchase_cost` exists but is returned locale-formatted and does not
-      round-trip; the provider deliberately does not model it.
+    - `purchase_cost` is returned locale-formatted ("1,234.50"); the provider
+      normalizes it on read and writes plain decimals only.
     - Seats are created/destroyed implicitly with the license's `seats`
       count; they can only be PATCHed. Switching an OCCUPIED seat's target
       type (user <-> asset) in a single PATCH fails with "Target not found";

@@ -1,5 +1,10 @@
 # Terraform Provider for Snipe-IT
 
+[![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fproviders%2Ftimrabl%2Fsnipeit&query=%24.version&label=terraform%20registry&color=7B42BC&logo=terraform)](https://registry.terraform.io/providers/timrabl/snipeit/latest)
+[![OpenTofu Registry](https://img.shields.io/badge/OpenTofu-registry-FFDA18?logo=opentofu&logoColor=white)](https://search.opentofu.org/provider/timrabl/snipeit/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/timrabl/terraform-provider-snipeit/ci.yml?branch=main&label=CI&logo=github)](https://github.com/timrabl/terraform-provider-snipeit/actions/workflows/ci.yml)
+[![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSE)
+
 Even in 2026 there is no modern open source ITAM tool that has truly arrived
 in the 21st century. So most companies that don't want to spend thousands of
 euros a year end up on [Snipe-IT](https://snipeitapp.com/). Which is honestly
@@ -34,8 +39,25 @@ provider "snipeit" {
 }
 ```
 
+The `source = "timrabl/snipeit"` block installs unchanged with either CLI:
+`terraform init` pulls it from the
+[Terraform Registry](https://registry.terraform.io/providers/timrabl/snipeit/latest),
+`tofu init` from the
+[OpenTofu Registry](https://search.opentofu.org/provider/timrabl/snipeit/latest).
+It can also be consumed from Pulumi via the bridge (see the guide below).
+
 See [`examples/`](examples/) and the generated [`docs/`](docs/) for the full
-reference.
+reference. Task-oriented guides:
+
+- [Getting started: bootstrap a company](docs/guides/getting-started.md)
+- [Using the provider with Terragrunt](docs/guides/terragrunt.md)
+- [Using the provider from Pulumi](docs/guides/pulumi-bridge.md)
+
+Supported Snipe-IT versions: the provider cleanly covers **7.1 through 8.7**
+(the current latest), and works back to **6.4** with one documented
+accessory-checkout gap; older releases are best-effort. The bounds live in
+`internal/snipeitversion`, and the per-resource matrix is in
+[`docs-internal/VERSION-COMPATIBILITY.md`](docs-internal/VERSION-COMPATIBILITY.md).
 
 ## Resources
 

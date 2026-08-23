@@ -3,12 +3,12 @@
 page_title: "snipeit_accessory Resource - snipeit"
 subcategory: ""
 description: |-
-  Manages an accessory in Snipe-IT. purchase_cost is intentionally not supported (the API returns it locale-formatted, which does not round-trip stably).
+  Manages an accessory in Snipe-IT.
 ---
 
 # snipeit_accessory (Resource)
 
-Manages an accessory in Snipe-IT. `purchase_cost` is intentionally not supported (the API returns it locale-formatted, which does not round-trip stably).
+Manages an accessory in Snipe-IT.
 
 ## Example Usage
 

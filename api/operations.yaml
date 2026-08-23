@@ -22,8 +22,8 @@ info:
     - `asset_maintenance_type` is NOT validated server-side; any string is
       accepted and stored. Common values: Maintenance, Repair, Upgrade,
       PAT test, Calibration, Software Support, Hardware Support.
-    - The maintenance `cost` is returned locale-formatted and cannot
-      round-trip stably; it is intentionally not modeled.
+    - The maintenance `cost` is returned locale-formatted ("1,500.50"); the
+      provider normalizes it on read and writes plain decimals only.
 
     Request bodies are intentionally NOT modeled as schemas: the provider
     builds them as maps because clear-on-unset semantics differ per field.
@@ -153,8 +153,8 @@ components:
     Maintenance:
       type: object
       description: >-
-        Maintenance detail. The locale-formatted `cost` is intentionally not
-        modeled (cannot round-trip).
+        Maintenance detail. The locale-formatted `cost` is normalized on read
+        and written back as a plain decimal.
       required: [id, asset_maintenance_type, title, is_warranty]
       properties:
         id: { type: integer, format: int64 }

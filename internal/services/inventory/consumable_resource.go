@@ -60,8 +60,7 @@ func (r *ConsumableResource) Metadata(ctx context.Context, req resource.Metadata
 
 func (r *ConsumableResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a consumable in Snipe-IT. `purchase_cost` is intentionally not " +
-			"supported (the API returns it locale-formatted, which does not round-trip stably).",
+		MarkdownDescription: "Manages a consumable in Snipe-IT.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int64Attribute{
 				MarkdownDescription: "Numeric id of the consumable.",

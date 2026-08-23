@@ -34,9 +34,9 @@ func NewLicenseResource() resource.Resource {
 
 // LicenseResource manages a Snipe-IT license.
 //
-// purchase_cost is deliberately not exposed: the API returns it formatted in
-// the instance locale, which does not round-trip stably in state (same
-// decision as snipeit_hardware).
+// purchase_cost is exposed as a normalized decimal string via tfutil.MoneyType:
+// the API returns it locale-formatted ("1,234.50"), which the money type
+// normalizes on read and writes back as a plain decimal.
 type LicenseResource struct {
 	svc *licensingapi.Service
 }
