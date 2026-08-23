@@ -1,0 +1,290 @@
+---
+name: Version matrix
+
+# The full Snipe-IT version matrix is expensive (one disposable stack per
+# version) so it does NOT run on every feature PR. It runs:
+#   * on demand           (workflow_dispatch)
+#   * weekly              (schedule) - opens/updates a drift issue on breakage
+#   * on the release PR   (pull_request whose head is release-please--*)
+#
+# Every run exercises the full version spread, but only versions flagged
+# `gate: true` block the release. The others run the suite for visibility
+# (step summary + per-version artifacts) without gating, because the provider
+# has documented, expected drift on them (docs-internal/VERSION-COMPATIBILITY.md)
+# and requiring them green would permanently block releases.
+#
+# The matrix-gate job is always present and is the single required status check:
+# it passes trivially when the matrix is skipped (feature PRs) and reflects the
+# gating versions' result when it runs (the release PR).
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Mondays 06:00 UTC.
+    - cron: "0 6 * * 1"
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: version-matrix-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  matrix:
+    name: Acceptance (${{ matrix.snipeit }})
+    # Skip the matrix on ordinary feature PRs; run it on dispatch, on the weekly
+    # schedule, and on the release-please release PR.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # `gate: true` versions must pass for the release gate to go green.
+        # `gate: false` versions still run the full suite (results land in the
+        # step summary and the per-version artifacts) but do NOT block, because
+        # the provider has documented, expected drift on them
+        # (docs-internal/VERSION-COMPATIBILITY.md): the build target 8.0.x is
+        # 35/35, while 6.4.2 (manufacturer, accessory checkout), 7.1.16
+        # (manufacturer notes) and 8.7.2 (forward API drift) have known
+        # failures. Requiring those to be green would permanently block
+        # releases. As the provider gains clean support for a version, flip its
+        # gate to true.
+        include:
+          - { snipeit: v6.4.2, gate: false }
+          - { snipeit: v7.1.16, gate: false }
+          - { snipeit: v8.0.4, gate: true }
+          - { snipeit: v8.7.2, gate: false }
+    env:
+      # A distinct localhost port per version keeps parallel jobs from colliding
+      # even though each job is an isolated runner.
+      PORT: "8085"
+      PROJECT: "snipeit-ci"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          check-latest: true
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      - name: Bring up the Snipe-IT stack
+        working-directory: dev
+        env:
+          SNIPEIT_DEV_VERSION: ${{ matrix.snipeit }}
+          SNIPEIT_DEV_HTTP_PORT: "8085"
+          SNIPEIT_DEV_APP_URL: http://localhost:8085
+          SNIPEIT_DEV_COOKIE_DOMAIN: localhost
+          SNIPEIT_DEV_DB_PASSWORD: ci-db-pw
+          SNIPEIT_DEV_DB_ROOT_PASSWORD: ci-db-root-pw
+        run: |
+          # A throwaway app key, generated per run; never a secret.
+          key="$(openssl rand -base64 32)"
+          export SNIPEIT_DEV_APP_KEY="base64:${key}"
+          docker compose -p "$PROJECT" up -d
+
+      - name: Seed Snipe-IT and capture token
+        id: seed
+        run: |
+          set -euo pipefail
+          TOKEN=""
+          TOKEN="$(scripts/ci-seed-snipeit.sh "$PROJECT" "$PORT" | sed -n 's/^TOKEN=//p')"
+          if [ -z "$TOKEN" ]; then
+            echo "seed did not return a token" >&2
+            exit 1
+          fi
+          # Mask so it never leaks into logs, then hand it to later steps.
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Acceptance tests
+        id: acc
+        # Non-gating versions run the full suite but never fail the job; their
+        # true result is still captured (steps.acc.outcome) for the summary,
+        # the per-version artifact and the drift issue.
+        continue-on-error: ${{ !matrix.gate }}
+        env:
+          TF_ACC: "1"
+          SNIPEIT_URL: http://localhost:8085
+          SNIPEIT_TOKEN: ${{ steps.seed.outputs.token }}
+        run: |
+          set -o pipefail
+          go test ./internal/... -timeout 30m 2>&1 | tee test-output.txt
+
+      - name: Version summary
+        if: always()
+        run: |
+          {
+            if [ "${{ matrix.gate }}" = "true" ]; then
+              lane="gating"
+            else
+              lane="monitored, non-gating"
+            fi
+            echo "### Snipe-IT ${{ matrix.snipeit }} ($lane)"
+            echo ""
+            if [ "${{ steps.acc.outcome }}" = "success" ]; then
+              echo "Result: ✅ acceptance suite passed"
+            elif [ "${{ matrix.gate }}" = "true" ]; then
+              echo "Result: ❌ acceptance suite failed (blocks the gate)"
+            else
+              echo "Result: ⚠️ acceptance suite failed (known drift, does not block)"
+            fi
+            echo ""
+            if [ -f test-output.txt ]; then
+              echo '<details><summary>go test output</summary>'
+              echo ""
+              echo '```'
+              # Keep the summary readable: last 200 lines carry the failures.
+              tail -n 200 test-output.txt
+              echo '```'
+              echo ""
+              echo '</details>'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record per-version result
+        if: always()
+        run: |
+          mkdir -p matrix-result
+          if [ "${{ steps.acc.outcome }}" = "success" ]; then
+            result=PASS
+          else
+            result=FAIL
+          fi
+          # Record result and whether this version gates the release.
+          echo "${result} gate=${{ matrix.gate }}" > "matrix-result/${{ matrix.snipeit }}"
+
+      - name: Upload per-version result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: matrix-result-${{ matrix.snipeit }}
+          path: matrix-result/
+          retention-days: 7
+
+      - name: Tear down the stack
+        if: always()
+        working-directory: dev
+        env:
+          # down needs the same interpolation vars the compose file references;
+          # values are irrelevant for teardown but must be present.
+          SNIPEIT_DEV_APP_KEY: "base64:ci"
+          SNIPEIT_DEV_VERSION: ${{ matrix.snipeit }}
+        run: docker compose -p "$PROJECT" down -v
+
+  matrix-gate:
+    name: Version matrix gate
+    needs: [matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate matrix result
+        run: |
+          result="${{ needs.matrix.result }}"
+          echo "matrix result: $result"
+          case "$result" in
+            skipped)
+              echo "Matrix skipped (feature PR) - gate passes."
+              ;;
+            success)
+              echo "Matrix succeeded - gate passes."
+              ;;
+            *)
+              echo "Matrix did not succeed - gate fails."
+              exit 1
+              ;;
+          esac
+
+  drift-issue:
+    name: Weekly drift issue
+    needs: [matrix]
+    # Only the scheduled run files drift; and only when something actually broke.
+    if: always() && github.event_name == 'schedule' && needs.matrix.result == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Download per-version results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: matrix-result-*
+          merge-multiple: true
+          path: matrix-result
+
+      - name: Collect failed versions
+        id: failed
+        run: |
+          set -euo pipefail
+          failed=""
+          if [ -d matrix-result ]; then
+            for f in matrix-result/*; do
+              [ -f "$f" ] || continue
+              if grep -q FAIL "$f"; then
+                name="$(basename "$f")"
+                if grep -q "gate=true" "$f"; then
+                  failed="${failed}- ${name} (gating - blocks releases)\n"
+                else
+                  failed="${failed}- ${name} (monitored)\n"
+                fi
+              fi
+            done
+          fi
+          [ -z "$failed" ] && failed="- (could not determine; see run)\n"
+          # Expand \n for the multi-line output.
+          {
+            echo "list<<EOF"
+            printf '%b' "$failed"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the drift tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          FAILED_LIST: ${{ steps.failed.outputs.list }}
+        run: |
+          set -euo pipefail
+          title="Version matrix drift"
+          label="matrix-drift"
+
+          # Ensure the label exists (ignore "already exists").
+          gh label create "$label" --repo "$REPO" \
+            --color B60205 --description "Weekly version-matrix breakage" 2>/dev/null || true
+
+          body=$(printf '%s\n' \
+            "The weekly Snipe-IT version matrix failed." \
+            "" \
+            "Run: ${RUN_URL}" \
+            "" \
+            "Failed versions:" \
+            "${FAILED_LIST}" \
+            "Open the run to see which acceptance tests drifted, then reconcile against docs-internal/VERSION-COMPATIBILITY.md." \
+            "" \
+            "This issue is updated (not duplicated) on subsequent weekly failures.")
+
+          existing="$(gh issue list --repo "$REPO" --label "$label" --state open \
+            --json number --jq '.[0].number' 2>/dev/null || true)"
+
+          if [ -n "$existing" ]; then
+            echo "Updating existing drift issue #$existing"
+            comment=$(printf '%s\n' \
+              "New weekly failure: ${RUN_URL}" \
+              "" \
+              "Failed versions:" \
+              "${FAILED_LIST}")
+            gh issue comment "$existing" --repo "$REPO" --body "$comment"
+          else
+            echo "Creating a new drift issue"
+            gh issue create --repo "$REPO" --title "$title" \
+              --label "$label" --body "$body"
+          fi
