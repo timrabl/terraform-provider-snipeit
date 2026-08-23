@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.2.0...v0.3.0) (2026-08-23)
+
+
+### Features
+
+* detect server version and gate version-specific behavior ([#31](https://github.com/timrabl/terraform-provider-snipeit/issues/31)) ([c611ef5](https://github.com/timrabl/terraform-provider-snipeit/commit/c611ef52f672e0f1abf05eb7d783e50aac505427)), closes [#25](https://github.com/timrabl/terraform-provider-snipeit/issues/25)
+
+
+### Bug Fixes
+
+* tolerate Snipe-IT response shape changes across versions ([#30](https://github.com/timrabl/terraform-provider-snipeit/issues/30)) ([a527454](https://github.com/timrabl/terraform-provider-snipeit/commit/a5274541502dce4d8400444bd07f487a007b540f)), closes [#24](https://github.com/timrabl/terraform-provider-snipeit/issues/24) [#27](https://github.com/timrabl/terraform-provider-snipeit/issues/27) [#29](https://github.com/timrabl/terraform-provider-snipeit/issues/29)
+
 ## [0.2.0](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.1.1...v0.2.0) (2026-08-22)
 
 
