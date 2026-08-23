@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.0...v0.3.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* preserve manufacturer fields on Snipe-IT &lt;= 7.x ([#36](https://github.com/timrabl/terraform-provider-snipeit/issues/36)) ([6114392](https://github.com/timrabl/terraform-provider-snipeit/commit/611439284ed34ca4dbf40b921cd4b83c1ed41166)), closes [#29](https://github.com/timrabl/terraform-provider-snipeit/issues/29)
+* track Snipe-IT 8.7 API changes ([#37](https://github.com/timrabl/terraform-provider-snipeit/issues/37)) ([8f3b630](https://github.com/timrabl/terraform-provider-snipeit/commit/8f3b63034b6e8998d56cfa53ecd805e06da428c5)), closes [#26](https://github.com/timrabl/terraform-provider-snipeit/issues/26) [#28](https://github.com/timrabl/terraform-provider-snipeit/issues/28) [#32](https://github.com/timrabl/terraform-provider-snipeit/issues/32) [#35](https://github.com/timrabl/terraform-provider-snipeit/issues/35)
+
 ## [0.3.0](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.2.0...v0.3.0) (2026-08-23)
 
 
