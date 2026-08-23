@@ -118,7 +118,7 @@ func (m *ManufacturerResourceModel) fromAPI(api *assetsapi.Manufacturer) {
 	m.WarrantyLookupURL = tfutil.StateStringKeep(api.WarrantyLookupUrl, m.WarrantyLookupURL)
 	m.SupportPhone = tfutil.StateStringKeep(api.SupportPhone, m.SupportPhone)
 	m.SupportEmail = tfutil.StateStringKeep(api.SupportEmail, m.SupportEmail)
-	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
+	m.Notes = tfutil.StateStringPtrPreserve(api.Notes, m.Notes)
 }
 
 func (r *ManufacturerResource) read(ctx context.Context, id int64, data *ManufacturerResourceModel) error {

@@ -84,3 +84,33 @@ func TestRefIDOrZero(t *testing.T) {
 		t.Errorf("ref = %d", got)
 	}
 }
+
+func TestFlexStringUnmarshal(t *testing.T) {
+	cases := map[string]string{
+		`"1"`:   "1",   // string form (<= 8.0)
+		`0`:     "0",   // numeric form (8.4+)
+		`-1`:    "-1",  // numeric explicit-deny
+		`"abc"`: "abc", // arbitrary string
+		`null`:  "",    // null -> empty
+	}
+	for in, want := range cases {
+		var f FlexString
+		if err := json.Unmarshal([]byte(in), &f); err != nil {
+			t.Fatalf("%s: %v", in, err)
+		}
+		if string(f) != want {
+			t.Errorf("%s -> %q, want %q", in, f, want)
+		}
+	}
+}
+
+func TestGroupPermissionsNumericForm(t *testing.T) {
+	// Snipe-IT 8.4+ returns permission values as bare numbers.
+	var m map[string]FlexString
+	if err := json.Unmarshal([]byte(`{"superuser":0,"admin":1,"reports.view":-1}`), &m); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if m["superuser"] != "0" || m["admin"] != "1" || m["reports.view"] != "-1" {
+		t.Errorf("got %+v", m)
+	}
+}

@@ -161,7 +161,7 @@ func (m *AccessoryResourceModel) fromAPI(api *inventoryapi.Accessory) {
 	m.CompanyID = tfutil.StateRefID(api.Company)
 	m.LocationID = tfutil.StateRefID(api.Location)
 	m.ModelNumber = tfutil.StateStringPtrKeep(api.ModelNumber, m.ModelNumber)
-	m.OrderNumber = tfutil.StateStringPtrKeep(api.OrderNumber, m.OrderNumber)
+	m.OrderNumber = tfutil.StateStringPtrPreserve(api.OrderNumber, m.OrderNumber)
 	// The read serializer returns the write field min_amt as min_qty.
 	m.MinAmt = tfutil.StateOptIntKeep(int64(api.MinQty), m.MinAmt)
 	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)

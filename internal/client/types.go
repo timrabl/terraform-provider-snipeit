@@ -104,3 +104,30 @@ func (f *FlexBool) UnmarshalJSON(data []byte) error {
 func NormalizeMoney(s string) string {
 	return strings.ReplaceAll(strings.TrimSpace(s), ",", "")
 }
+
+// FlexString unmarshals a JSON value that may arrive as a string or a bare
+// number and always yields its string form. Snipe-IT changed several fields
+// from string-encoded to numeric between 8.0 and 8.4 (e.g. group permission
+// values went from "0"/"1" to 0/1), so decoding them as a plain string fails
+// with "cannot unmarshal number into ...". FlexString tolerates both.
+type FlexString string
+
+func (f *FlexString) UnmarshalJSON(data []byte) error {
+	s := strings.TrimSpace(string(data))
+	if s == "null" {
+		*f = ""
+		return nil
+	}
+	// Already a JSON string.
+	if len(s) > 0 && s[0] == '"' {
+		var str string
+		if err := json.Unmarshal(data, &str); err != nil {
+			return err
+		}
+		*f = FlexString(str)
+		return nil
+	}
+	// Bare number (or bool) -> use its literal text.
+	*f = FlexString(s)
+	return nil
+}

@@ -161,7 +161,7 @@ func (m *ConsumableResourceModel) fromAPI(api *inventoryapi.Consumable) {
 	m.LocationID = tfutil.StateRefID(api.Location)
 	m.ItemNo = tfutil.StateStringPtrKeep(api.ItemNo, m.ItemNo)
 	m.ModelNumber = tfutil.StateStringPtrKeep(api.ModelNumber, m.ModelNumber)
-	m.OrderNumber = tfutil.StateStringPtrKeep(api.OrderNumber, m.OrderNumber)
+	m.OrderNumber = tfutil.StateStringPtrPreserve(api.OrderNumber, m.OrderNumber)
 	m.MinAmt = tfutil.StateOptIntKeep(int64(api.MinAmt), m.MinAmt)
 	m.Notes = tfutil.StateStringPtrKeep(api.Notes, m.Notes)
 	if api.PurchaseDate != nil && api.PurchaseDate.Date != "" {

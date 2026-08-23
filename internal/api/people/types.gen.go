@@ -13,8 +13,8 @@ type Group struct {
 	Name  string  `json:"name"`
 	Notes *string `json:"notes,omitempty"`
 
-	// Permissions Stored permission map, values "1" (allow), "0" (inherit/deny) or "-1" (explicit deny). Groups created without permissions get a server-generated full default map.
-	Permissions map[string]string `json:"permissions"`
+	// Permissions Stored permission map, values "1" (allow), "0" (inherit/deny) or "-1" (explicit deny). Groups created without permissions get a server-generated full default map. Values are string-encoded on Snipe-IT <= 8.0 ("0"/"1") but bare numbers on 8.4+; FlexString tolerates both.
+	Permissions map[string]client.FlexString `json:"permissions"`
 }
 
 // GroupList defines model for GroupList.

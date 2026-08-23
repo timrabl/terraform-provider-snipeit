@@ -112,7 +112,19 @@ func (m *GroupResourceModel) fromAPI(ctx context.Context, api *peopleapi.Group) 
 		m.Permissions = types.MapNull(types.StringType)
 		return nil
 	}
-	permMap, diags := types.MapValueFrom(ctx, types.StringType, api.Permissions)
+	// api.Permissions values are client.FlexString (tolerant of the string
+	// form on <= 8.0 and the numeric form on 8.4+); normalize to plain strings.
+	// Snipe-IT 8.4+ echoes back the FULL permission map for a partial config,
+	// so reflect only the keys the user actually configured — otherwise the
+	// extra server-side keys read as "inconsistent result after apply".
+	configured := m.Permissions.Elements()
+	perms := make(map[string]string, len(configured))
+	for k, v := range api.Permissions {
+		if _, ok := configured[k]; ok {
+			perms[k] = string(v)
+		}
+	}
+	permMap, diags := types.MapValueFrom(ctx, types.StringType, perms)
 	if diags.HasError() {
 		return fmt.Errorf("building permissions map: %v", diags)
 	}
@@ -215,7 +227,13 @@ func (r *GroupResource) updateApplied(ctx context.Context, id int64, data *Group
 	if !ok {
 		return true
 	}
-	return maps.Equal(api.Permissions, wantPerms)
+	// api.Permissions values are FlexString (tolerant across versions);
+	// compare as plain strings.
+	gotPerms := make(map[string]string, len(api.Permissions))
+	for k, v := range api.Permissions {
+		gotPerms[k] = string(v)
+	}
+	return maps.Equal(gotPerms, wantPerms)
 }
 
 func (r *GroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

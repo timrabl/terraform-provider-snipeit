@@ -223,9 +223,15 @@ components:
           description: >-
             Stored permission map, values "1" (allow), "0" (inherit/deny) or
             "-1" (explicit deny). Groups created without permissions get a
-            server-generated full default map.
+            server-generated full default map. Values are string-encoded on
+            Snipe-IT <= 8.0 ("0"/"1") but bare numbers on 8.4+; FlexString
+            tolerates both.
           type: object
-          additionalProperties: { type: string }
+          additionalProperties:
+            type: string
+            x-go-type: client.FlexString
+            x-go-type-import:
+              path: github.com/timrabl/terraform-provider-snipeit/internal/client
     GroupList:
       type: object
       required: [total, rows]

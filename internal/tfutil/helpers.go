@@ -184,3 +184,17 @@ func StateOptIntKeep(n int64, prior types.Int64) types.Int64 {
 	}
 	return types.Int64Value(n)
 }
+
+// StateStringPtrPreserve maps a nullable API string to state but, when the API
+// returns it empty or absent, preserves whatever the prior state/plan held.
+// Use it for fields the API does not reliably echo back on every version
+// (e.g. manufacturer notes on Snipe-IT <= 7.x, order_number on 8.7): a plain
+// mapping would drop the configured value to null and fail with "inconsistent
+// result after apply". The cost is that a genuine out-of-band clear of such a
+// field is not detected, which is unavoidable when the API never returns it.
+func StateStringPtrPreserve(s *string, prior types.String) types.String {
+	if s == nil || *s == "" {
+		return prior
+	}
+	return types.StringValue(*s)
+}
