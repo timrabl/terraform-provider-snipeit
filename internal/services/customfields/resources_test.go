@@ -85,16 +85,22 @@ resource "snipeit_field" "test" {
 				ImportStateVerifyIgnore: []string{"help_text", "show_in_email"},
 			},
 			{
+				// Snipe-IT 8.7 validates the element against the format: a
+				// listbox is only valid with a compatible format, so switching
+				// element from text/IP to listbox must also set a compatible
+				// format (here ANY). Older versions accept this unchanged.
 				Config: fmt.Sprintf(`
 resource "snipeit_field" "test" {
   name         = %q
   element      = "listbox"
+  format       = "ANY"
   field_values = "one\ntwo\nthree"
 }
 `, name+"-renamed"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("snipeit_field.test", "name", name+"-renamed"),
 					resource.TestCheckResourceAttr("snipeit_field.test", "element", "listbox"),
+					resource.TestCheckResourceAttr("snipeit_field.test", "format", "ANY"),
 					resource.TestCheckResourceAttr("snipeit_field.test", "field_values", "one\ntwo\nthree"),
 				),
 			},

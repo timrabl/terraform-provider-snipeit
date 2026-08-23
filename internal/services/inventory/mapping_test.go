@@ -43,6 +43,11 @@ func TestAccessoryFromAPI(t *testing.T) {
 	}
 
 	var m AccessoryResourceModel
+	// Prior purchase_date is set (as it is on create/refresh when the field was
+	// configured), so the clear-aware mapper maps the API value through. A
+	// null prior would map to null regardless (the 8.7 clear behavior), which
+	// is covered by the acceptance tests.
+	m.PurchaseDate = types.StringValue("prior")
 	m.fromAPI(&api)
 
 	if m.ID.ValueInt64() != 7 {
@@ -187,6 +192,8 @@ func TestAccessoryCheckoutRowsDecode(t *testing.T) {
 	}
 }
 
+// Snipe-IT <= 8.4 carries the asset id in a top-level "id" field and the
+// asset name as a bare string.
 const componentAssetRowsFixture = `{
 	"total": 1,
 	"rows": [
@@ -194,21 +201,38 @@ const componentAssetRowsFixture = `{
 	]
 }`
 
+// Snipe-IT 8.7 dropped the top-level "id" and moved the asset id into a nested
+// "name" object.
+const componentAssetRows87Fixture = `{
+	"total": 1,
+	"rows": [
+		{"assigned_pivot_id": 31, "qty": "2", "name": {"id": 44, "type": "asset", "name": "#some-asset"}}
+	]
+}`
+
 func TestComponentAssetRowsDecode(t *testing.T) {
-	var list inventoryapi.ComponentAssetList
-	if err := json.Unmarshal([]byte(componentAssetRowsFixture), &list); err != nil {
-		t.Fatalf("unmarshal fixture: %v", err)
-	}
-	if len(list.Rows) != 1 {
-		t.Fatalf("rows = %d", len(list.Rows))
-	}
-	row := list.Rows[0]
-	if row.AssignedPivotId != 31 || row.Id != 44 {
-		t.Errorf("row = %+v", row)
-	}
-	// qty arrives as string — FlexInt must decode it.
-	if int64(row.Qty) != 2 {
-		t.Errorf("qty = %v", row.Qty)
+	for name, fixture := range map[string]string{
+		"pre-8.7 top-level id": componentAssetRowsFixture,
+		"8.7 nested name.id":   componentAssetRows87Fixture,
+	} {
+		t.Run(name, func(t *testing.T) {
+			var list inventoryapi.ComponentAssetList
+			if err := json.Unmarshal([]byte(fixture), &list); err != nil {
+				t.Fatalf("unmarshal fixture: %v", err)
+			}
+			if len(list.Rows) != 1 {
+				t.Fatalf("rows = %d", len(list.Rows))
+			}
+			row := list.Rows[0]
+			// AssetID must resolve to 44 regardless of which shape carried it.
+			if row.AssignedPivotId != 31 || row.AssetID() != 44 {
+				t.Errorf("row = %+v, AssetID = %d", row, row.AssetID())
+			}
+			// qty arrives as string — FlexInt must decode it.
+			if int64(row.Qty) != 2 {
+				t.Errorf("qty = %v", row.Qty)
+			}
+		})
 	}
 }
 

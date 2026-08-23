@@ -75,9 +75,11 @@ resource "snipeit_accessory" "test" {
 				ResourceName:      "snipeit_accessory.test",
 				ImportState:       true,
 				ImportStateVerify: true,
-				// order_number is not returned by the API on Snipe-IT 8.7+, so it
-				// cannot be verified on a fresh import there.
-				ImportStateVerifyIgnore: []string{"order_number"},
+				// order_number is not returned by the API on Snipe-IT 8.7+, and
+				// purchase_cost/purchase_date use a clear-aware mapper that reads
+				// null on a fresh import (no prior value), so none of these can be
+				// verified by a fresh import.
+				ImportStateVerifyIgnore: []string{"order_number", "purchase_cost", "purchase_date"},
 			},
 			{
 				Config: base + fmt.Sprintf(`
@@ -169,9 +171,11 @@ resource "snipeit_consumable" "test" {
 				ResourceName:      "snipeit_consumable.test",
 				ImportState:       true,
 				ImportStateVerify: true,
-				// order_number is not returned by the API on Snipe-IT 8.7+, so it
-				// cannot be verified on a fresh import there.
-				ImportStateVerifyIgnore: []string{"order_number"},
+				// order_number is not returned by the API on Snipe-IT 8.7+, and
+				// purchase_cost/purchase_date use a clear-aware mapper that reads
+				// null on a fresh import (no prior value), so none of these can be
+				// verified by a fresh import.
+				ImportStateVerifyIgnore: []string{"order_number", "purchase_cost", "purchase_date"},
 			},
 			{
 				Config: base + fmt.Sprintf(`
@@ -240,9 +244,11 @@ resource "snipeit_component" "test" {
 				ResourceName:      "snipeit_component.test",
 				ImportState:       true,
 				ImportStateVerify: true,
-				// order_number is not returned by the API on Snipe-IT 8.7+, so it
-				// cannot be verified on a fresh import there.
-				ImportStateVerifyIgnore: []string{"order_number"},
+				// order_number is not returned by the API on Snipe-IT 8.7+, and
+				// purchase_cost/purchase_date use a clear-aware mapper that reads
+				// null on a fresh import (no prior value), so none of these can be
+				// verified by a fresh import.
+				ImportStateVerifyIgnore: []string{"order_number", "purchase_cost", "purchase_date"},
 			},
 			{
 				Config: base + fmt.Sprintf(`

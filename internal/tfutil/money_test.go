@@ -12,6 +12,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/timrabl/terraform-provider-snipeit/internal/client"
 )
 
 func TestCanonicalMoney(t *testing.T) {
@@ -90,5 +93,40 @@ func TestBodyMoneyAndStateMoneyPtr(t *testing.T) {
 	empty := ""
 	if !StateMoneyPtr(&empty).IsNull() {
 		t.Error("empty should map to null")
+	}
+}
+
+func TestStateMoneyPtrClearAware(t *testing.T) {
+	api := "1,234.50"
+
+	// Prior null (user cleared or never set): map to null even though the API
+	// still echoes a value (Snipe-IT 8.7 ignores the clear).
+	if got := StateMoneyPtrClearAware(&api, NewMoneyNull()); !got.IsNull() {
+		t.Errorf("prior null should map to null, got %q", got.ValueString())
+	}
+	// Prior set: map the API value normally (drift is still detected).
+	if got := StateMoneyPtrClearAware(&api, NewMoneyValue("0.00")); got.ValueString() != "1234.50" {
+		t.Errorf("prior set should map API value, got %q", got.ValueString())
+	}
+	// Prior set but API cleared: maps to null (genuine clear detected).
+	if got := StateMoneyPtrClearAware(nil, NewMoneyValue("1234.50")); !got.IsNull() {
+		t.Errorf("API-cleared with prior set should be null, got %q", got.ValueString())
+	}
+}
+
+func TestStateDateClearAware(t *testing.T) {
+	date := &client.Date{Date: "2026-01-10"}
+
+	// Prior null: null regardless of the echoed API date.
+	if got := StateDateClearAware(date, types.StringNull()); !got.IsNull() {
+		t.Errorf("prior null should map to null, got %q", got.ValueString())
+	}
+	// Prior set: map the API date.
+	if got := StateDateClearAware(date, types.StringValue("2000-01-01")); got.ValueString() != "2026-01-10" {
+		t.Errorf("prior set should map API date, got %q", got.ValueString())
+	}
+	// Prior set but API empty/nil: null.
+	if got := StateDateClearAware(nil, types.StringValue("2026-01-10")); !got.IsNull() {
+		t.Errorf("nil API date with prior set should be null, got %q", got.ValueString())
 	}
 }

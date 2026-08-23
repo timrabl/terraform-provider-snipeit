@@ -119,7 +119,7 @@ func (r *ComponentCheckoutResource) Create(ctx context.Context, req resource.Cre
 	}
 	var pivotID int64
 	for _, row := range after.Rows {
-		if known[row.AssignedPivotId] || row.Id != assetID {
+		if known[row.AssignedPivotId] || row.AssetID() != assetID {
 			continue
 		}
 		if row.AssignedPivotId > pivotID {
