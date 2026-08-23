@@ -75,6 +75,9 @@ resource "snipeit_accessory" "test" {
 				ResourceName:      "snipeit_accessory.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// order_number is not returned by the API on Snipe-IT 8.7+, so it
+				// cannot be verified on a fresh import there.
+				ImportStateVerifyIgnore: []string{"order_number"},
 			},
 			{
 				Config: base + fmt.Sprintf(`
@@ -166,6 +169,9 @@ resource "snipeit_consumable" "test" {
 				ResourceName:      "snipeit_consumable.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// order_number is not returned by the API on Snipe-IT 8.7+, so it
+				// cannot be verified on a fresh import there.
+				ImportStateVerifyIgnore: []string{"order_number"},
 			},
 			{
 				Config: base + fmt.Sprintf(`
@@ -234,6 +240,9 @@ resource "snipeit_component" "test" {
 				ResourceName:      "snipeit_component.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				// order_number is not returned by the API on Snipe-IT 8.7+, so it
+				// cannot be verified on a fresh import there.
+				ImportStateVerifyIgnore: []string{"order_number"},
 			},
 			{
 				Config: base + fmt.Sprintf(`
