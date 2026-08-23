@@ -53,7 +53,7 @@ type AuditRow struct {
 // FlexBool Boolean the API returns as true/false, 0/1 or "0"/"1".
 type FlexBool = client.FlexBool
 
-// Maintenance Maintenance detail. The locale-formatted `cost` is intentionally not modeled (cannot round-trip).
+// Maintenance Maintenance detail. The locale-formatted `cost` is normalized on read and written back as a plain decimal.
 type Maintenance struct {
 	// Asset Nested related-object reference, e.g. {"id": 3, "name": "X"}.
 	Asset *NestedRef `json:"asset,omitempty"`

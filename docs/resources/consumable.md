@@ -3,12 +3,12 @@
 page_title: "snipeit_consumable Resource - snipeit"
 subcategory: ""
 description: |-
-  Manages a consumable in Snipe-IT. purchase_cost is intentionally not supported (the API returns it locale-formatted, which does not round-trip stably).
+  Manages a consumable in Snipe-IT.
 ---
 
 # snipeit_consumable (Resource)
 
-Manages a consumable in Snipe-IT. `purchase_cost` is intentionally not supported (the API returns it locale-formatted, which does not round-trip stably).
+Manages a consumable in Snipe-IT.
 
 ## Example Usage
 

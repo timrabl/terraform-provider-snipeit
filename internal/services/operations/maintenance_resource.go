@@ -60,9 +60,7 @@ func (r *MaintenanceResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *MaintenanceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages an asset maintenance record in Snipe-IT.\n\n" +
-			"~> The `cost` field is intentionally not supported: the API returns it formatted " +
-			"according to the instance locale, which cannot round-trip stably through Terraform state.",
+		MarkdownDescription: "Manages an asset maintenance record in Snipe-IT.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int64Attribute{
 				MarkdownDescription: "Numeric id of the maintenance.",
