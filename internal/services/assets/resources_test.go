@@ -8,6 +8,8 @@ package assets_test
 
 import (
 	"fmt"
+	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -259,6 +261,79 @@ resource "snipeit_hardware" "test" {
 					resource.TestCheckResourceAttr("snipeit_hardware.test", "notes", "updated by acceptance test"),
 					resource.TestCheckNoResourceAttr("snipeit_hardware.test", "serial"),
 					resource.TestCheckNoResourceAttr("snipeit_hardware.test", "purchase_cost"),
+				),
+			},
+		},
+	})
+}
+
+// An empty asset_tag is rejected at plan time: the API would treat it as
+// "auto-generate", which cannot round-trip through a configured "".
+func TestAccHardwareResourceEmptyAssetTag(t *testing.T) {
+	prefix := acctest.RandomWithPrefix("tf-acc-hwet")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acc.PreCheck(t) },
+		ProtoV6ProviderFactories: acc.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: acc.HardwareBaseConfig(prefix) + `
+resource "snipeit_hardware" "test" {
+  asset_tag = ""
+  model_id  = snipeit_model.test.id
+  status_id = snipeit_status_label.test.id
+}
+`,
+				ExpectError: regexp.MustCompile(`string length must be at least 1`),
+			},
+		},
+	})
+}
+
+// Requires the "auto-increment asset tags" setting on the target instance;
+// gated behind SNIPEIT_ACC_AUTO_INCREMENT=1 because the dev compose default
+// leaves it off.
+func TestAccHardwareResourceAutoAssetTag(t *testing.T) {
+	if os.Getenv("SNIPEIT_ACC_AUTO_INCREMENT") == "" {
+		t.Skip("SNIPEIT_ACC_AUTO_INCREMENT not set; instance must have auto-increment asset tags enabled")
+	}
+	prefix := acctest.RandomWithPrefix("tf-acc-hwauto")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acc.PreCheck(t) },
+		ProtoV6ProviderFactories: acc.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: acc.HardwareBaseConfig(prefix) + fmt.Sprintf(`
+resource "snipeit_hardware" "test" {
+  model_id  = snipeit_model.test.id
+  status_id = snipeit_status_label.test.id
+  serial    = "SN-%s"
+}
+`, prefix),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("snipeit_hardware.test", "asset_tag"),
+					resource.TestCheckResourceAttrSet("snipeit_hardware.test", "id"),
+				),
+			},
+			{
+				ResourceName:      "snipeit_hardware.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			// Updating another attribute must keep the generated tag.
+			{
+				Config: acc.HardwareBaseConfig(prefix) + fmt.Sprintf(`
+resource "snipeit_hardware" "test" {
+  model_id  = snipeit_model.test.id
+  status_id = snipeit_status_label.test.id
+  serial    = "SN-%s"
+  name      = "Auto Tagged Asset"
+}
+`, prefix),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("snipeit_hardware.test", "name", "Auto Tagged Asset"),
+					resource.TestCheckResourceAttrSet("snipeit_hardware.test", "asset_tag"),
 				),
 			},
 		},
