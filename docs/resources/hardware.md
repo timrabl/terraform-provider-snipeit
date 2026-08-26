@@ -49,12 +49,12 @@ resource "snipeit_hardware" "mbp" {
 
 ### Required
 
-- `asset_tag` (String) Unique asset tag.
 - `model_id` (Number) Id of the asset model.
 - `status_id` (Number) Id of the status label.
 
 ### Optional
 
+- `asset_tag` (String) Unique asset tag. Omit to let Snipe-IT generate the next tag (requires the *auto-increment asset tags* setting on the instance). An empty string is rejected: the API would treat it as "generate one", which cannot round-trip through Terraform.
 - `company_id` (Number) Id of the company owning this asset.
 - `location_id` (Number) Id of the default (ready-to-deploy) location of this asset.
 - `name` (String) Display name of the asset.

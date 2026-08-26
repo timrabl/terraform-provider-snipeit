@@ -10,11 +10,13 @@ import (
 	"context"
 	"errors"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	assetsapi "github.com/timrabl/terraform-provider-snipeit/internal/api/assets"
@@ -70,8 +72,13 @@ func (r *HardwareResource) Schema(ctx context.Context, req resource.SchemaReques
 				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 			},
 			"asset_tag": schema.StringAttribute{
-				MarkdownDescription: "Unique asset tag.",
-				Required:            true,
+				MarkdownDescription: "Unique asset tag. Omit to let Snipe-IT generate the next tag " +
+					"(requires the *auto-increment asset tags* setting on the instance). " +
+					"An empty string is rejected: the API would treat it as \"generate one\", " +
+					"which cannot round-trip through Terraform.",
+				Optional:   true,
+				Computed:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"model_id": schema.Int64Attribute{
 				MarkdownDescription: "Id of the asset model.",
@@ -141,9 +148,13 @@ func (r *HardwareResource) Configure(ctx context.Context, req resource.Configure
 
 func (m *HardwareResourceModel) toBody() map[string]any {
 	body := map[string]any{
-		"asset_tag": m.AssetTag.ValueString(),
 		"model_id":  m.ModelID.ValueInt64(),
 		"status_id": m.StatusID.ValueInt64(),
+	}
+	// Omitted asset_tag lets the server auto-generate one (issue #40); on
+	// update the plan carries the prior tag, so the field is never cleared.
+	if !m.AssetTag.IsNull() && !m.AssetTag.IsUnknown() {
+		body["asset_tag"] = m.AssetTag.ValueString()
 	}
 	tfutil.BodyString(body, "name", m.Name)
 	tfutil.BodyString(body, "serial", m.Serial)

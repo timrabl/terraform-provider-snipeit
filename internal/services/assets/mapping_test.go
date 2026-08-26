@@ -247,6 +247,29 @@ func TestHardwareToBodyClearSemantics(t *testing.T) {
 	}
 }
 
+func TestHardwareToBodyOmitsUnsetAssetTag(t *testing.T) {
+	// Unset asset_tag is omitted so the server can auto-generate the next
+	// tag (issue #40); it is never cleared once present.
+	m := HardwareResourceModel{
+		AssetTag: types.StringNull(),
+		ModelID:  types.Int64Value(7),
+		StatusID: types.Int64Value(2),
+	}
+	if _, ok := m.toBody()["asset_tag"]; ok {
+		t.Errorf("null asset_tag must be omitted from the body")
+	}
+
+	m.AssetTag = types.StringUnknown()
+	if _, ok := m.toBody()["asset_tag"]; ok {
+		t.Errorf("unknown asset_tag must be omitted from the body")
+	}
+
+	m.AssetTag = types.StringValue("IT-0042")
+	if got := m.toBody()["asset_tag"]; got != "IT-0042" {
+		t.Errorf("set asset_tag must be sent verbatim, got %v", got)
+	}
+}
+
 func TestModelToBodyClearSemantics(t *testing.T) {
 	m := ModelResourceModel{
 		Name:           types.StringValue("X"),
