@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.1...v0.3.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* make hardware asset_tag optional for auto-increment instances ([#41](https://github.com/timrabl/terraform-provider-snipeit/issues/41)) ([4b1535b](https://github.com/timrabl/terraform-provider-snipeit/commit/4b1535bd51eedffa4402b19707d47b213fb201ce)), closes [#40](https://github.com/timrabl/terraform-provider-snipeit/issues/40)
+
 ## [0.3.1](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.0...v0.3.1) (2026-08-23)
 
 
