@@ -20,7 +20,7 @@ x-restart-policy: &x-restart-policy
 services:
   db:
     <<: *x-restart-policy
-    image: mariadb:11.8.8-noble
+    image: mariadb:11.8.9-noble
     environment:
       MYSQL_DATABASE: snipeit
       MYSQL_USER: snipeit
