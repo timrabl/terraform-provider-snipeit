@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.2...v0.3.3) (2026-10-13)
+
+
+### Miscellaneous Chores
+
+* release 0.3.3 ([#55](https://github.com/timrabl/terraform-provider-snipeit/issues/55)) ([4ac7fc0](https://github.com/timrabl/terraform-provider-snipeit/commit/4ac7fc019e9bbe1a4fa28e3b0558d8ca4135983b))
+
 ## [0.3.2](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.1...v0.3.2) (2026-08-26)
 
 
