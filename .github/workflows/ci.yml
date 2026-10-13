@@ -103,12 +103,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: stable
-          check-latest: true
+          # gosec bundles its own golang.org/x/tools, which cannot read export
+          # data written by a Go release newer than it knows about (Go 1.27
+          # broke v2.29.0). Building with go.mod's version keeps them in step.
+          go-version-file: go.mod
       # The securego/gosec docker action pins its own Go toolchain, which
       # falls behind go.mod's requirement; running the pinned module through
       # setup-go's toolchain avoids that (sums verified by the module proxy).
-      - run: go run github.com/securego/gosec/v2/cmd/gosec@v2.28.0 ./...
+      - run: go run github.com/securego/gosec/v2/cmd/gosec@v2.29.0 ./...
 
   govulncheck:
     name: Security (govulncheck)
