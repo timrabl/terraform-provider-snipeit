@@ -86,7 +86,7 @@ jobs:
           terraform_wrapper: false
       # mise.toml sources env.local, which only exists locally.
       - run: touch env.local
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Regenerate API models and docs
         run: |
           mise run api:generate
