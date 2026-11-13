@@ -63,7 +63,7 @@ resource "snipeit_hardware" "mbp" {
 - `purchase_cost` (String) Purchase cost as a decimal string, e.g. `1234.50`. Stored normalized; `1234.5`, `1234.50` and `1,234.50` are the same value.
 - `purchase_date` (String) Purchase date in `YYYY-MM-DD` format.
 - `requestable` (Boolean) Whether this asset can be requested by users.
-- `serial` (String) Serial number of the asset.
+- `serial` (String) Serial number of the asset. Left unset, the provider never sends the field, so an existing serial is not touched. Removing a previously configured serial clears it, except on Snipe-IT 8.3.5 and later with *unique serial numbers* enforced: there the API rejects an empty serial on update (`The serial must be a string.`), so the serial cannot be cleared through the API.
 - `supplier_id` (Number) Id of the supplier of this asset.
 - `warranty_months` (Number) Warranty duration in months.
 
