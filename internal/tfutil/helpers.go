@@ -70,6 +70,26 @@ func BodyString(m map[string]any, key string, v types.String) {
 	m[key] = v.ValueString()
 }
 
+// BodyStringSparse sends a known, non-null value verbatim. A null or unknown
+// value is omitted, leaving the server value untouched, unless the prior
+// state held a non-empty value: then the practitioner removed the attribute
+// and "" is sent so it is cleared server-side. Pass a null prior on create.
+//
+// Use it for fields whose update validation rejects an empty value that was
+// never set. BodyString would send "" on every update, Laravel's
+// ConvertEmptyStringsToNull middleware turns it into null, and a rule list
+// without `nullable` then fails.
+func BodyStringSparse(m map[string]any, key string, plan, prior types.String) {
+	if !plan.IsNull() && !plan.IsUnknown() {
+		m[key] = plan.ValueString()
+		return
+	}
+	if plan.IsUnknown() || prior.IsNull() || prior.IsUnknown() || prior.ValueString() == "" {
+		return
+	}
+	m[key] = ""
+}
+
 // BodyNullableInt sends the value, or an explicit JSON null when the config
 // value is null, so removing the attribute clears the field server-side.
 // Unknown values are omitted.
