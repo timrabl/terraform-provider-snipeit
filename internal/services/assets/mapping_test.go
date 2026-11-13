@@ -218,7 +218,7 @@ func TestHardwareToBodyClearSemantics(t *testing.T) {
 		SupplierID:     types.Int64Unknown(), // unknown -> omitted
 		Requestable:    types.BoolUnknown(),  // unknown -> omitted
 	}
-	body := m.toBody()
+	body := m.toBody(nil)
 
 	if body["asset_tag"] != "IT-0042" || body["model_id"] != int64(7) || body["status_id"] != int64(2) {
 		t.Errorf("required keys wrong: %v", body)
@@ -247,6 +247,45 @@ func TestHardwareToBodyClearSemantics(t *testing.T) {
 	}
 }
 
+// An unset serial must never reach the API as "": Snipe-IT 8.3.5+ turns it
+// into null and rejects it on update ("The serial must be a string.") when
+// unique serials are enforced, which broke updates of assets that never had
+// a serial. Only removing a serial that was set sends the clearing "".
+func TestHardwareToBodySerialSemantics(t *testing.T) {
+	m := HardwareResourceModel{
+		AssetTag: types.StringValue("IT-0042"),
+		ModelID:  types.Int64Value(7),
+		StatusID: types.Int64Value(2),
+		Name:     types.StringValue("renamed"),
+		Serial:   types.StringNull(),
+	}
+
+	if _, ok := m.toBody(nil)["serial"]; ok {
+		t.Errorf("create: unset serial must be omitted")
+	}
+
+	never := HardwareResourceModel{Serial: types.StringNull()}
+	if _, ok := m.toBody(&never)["serial"]; ok {
+		t.Errorf("update: serial that was never set must be omitted")
+	}
+
+	set := HardwareResourceModel{Serial: types.StringValue("SN-1")}
+	if v, ok := m.toBody(&set)["serial"]; !ok || v != "" {
+		t.Errorf("update: removed serial must be cleared with \"\", got %v (present=%v)", v, ok)
+	}
+
+	m.Serial = types.StringValue("SN-2")
+	if v := m.toBody(&set)["serial"]; v != "SN-2" {
+		t.Errorf("update: configured serial must be sent verbatim, got %v", v)
+	}
+
+	// Other strings keep their clear-on-unset semantics.
+	m.Name = types.StringNull()
+	if v, ok := m.toBody(&never)["name"]; !ok || v != "" {
+		t.Errorf("unset name must still be sent as \"\", got %v (present=%v)", v, ok)
+	}
+}
+
 func TestHardwareToBodyOmitsUnsetAssetTag(t *testing.T) {
 	// Unset asset_tag is omitted so the server can auto-generate the next
 	// tag (issue #40); it is never cleared once present.
@@ -255,17 +294,17 @@ func TestHardwareToBodyOmitsUnsetAssetTag(t *testing.T) {
 		ModelID:  types.Int64Value(7),
 		StatusID: types.Int64Value(2),
 	}
-	if _, ok := m.toBody()["asset_tag"]; ok {
+	if _, ok := m.toBody(nil)["asset_tag"]; ok {
 		t.Errorf("null asset_tag must be omitted from the body")
 	}
 
 	m.AssetTag = types.StringUnknown()
-	if _, ok := m.toBody()["asset_tag"]; ok {
+	if _, ok := m.toBody(nil)["asset_tag"]; ok {
 		t.Errorf("unknown asset_tag must be omitted from the body")
 	}
 
 	m.AssetTag = types.StringValue("IT-0042")
-	if got := m.toBody()["asset_tag"]; got != "IT-0042" {
+	if got := m.toBody(nil)["asset_tag"]; got != "IT-0042" {
 		t.Errorf("set asset_tag must be sent verbatim, got %v", got)
 	}
 }
@@ -293,12 +332,12 @@ func TestHardwareToBodyMoneySemantics(t *testing.T) {
 	m.ModelID = types.Int64Value(1)
 	m.StatusID = types.Int64Value(2)
 	m.PurchaseCost = tfutil.NewMoneyValue("1,234.50")
-	body := m.toBody()
+	body := m.toBody(nil)
 	if body["purchase_cost"] != "1234.50" {
 		t.Errorf("purchase_cost must be sent normalized, got %v", body["purchase_cost"])
 	}
 	m.PurchaseCost = tfutil.NewMoneyNull()
-	body = m.toBody()
+	body = m.toBody(nil)
 	if v, ok := body["purchase_cost"]; !ok || v != nil {
 		t.Errorf("null purchase_cost must be sent as explicit null, got %v (present=%v)", v, ok)
 	}

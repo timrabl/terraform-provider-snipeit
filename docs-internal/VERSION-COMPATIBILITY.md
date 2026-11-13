@@ -131,6 +131,18 @@ runs the full suite 35/35. The history, and how each was resolved:
   server-side race in asset creation. The checkout resource is unaffected; the
   acceptance test now serializes its two asset creates so it exercises the
   checkout rather than the unrelated concurrency bug.
+- **`snipeit_hardware` update without a serial — failing on 8.3.5+ with
+  unique serials enforced, now fixed.** Since 8.3.5 `UpdateAssetRequest`
+  overrides the model rule for `serial` with `string|max:255|not_array` plus
+  either a `unique` rule (when *unique serial numbers* is on) or `nullable`
+  (when it is off). The provider used to send `"serial": ""` for an unset
+  serial; `ConvertEmptyStringsToNull` turns that into null, which fails
+  `string` without `nullable`: `serial: The serial must be a string.` on every
+  update of an asset that has no serial. Create was never affected because
+  `StoreAssetRequest` keeps the model rule (`nullable|string`). The provider
+  now omits an unset serial and only sends `""` when a previously set serial
+  is removed. The matrix cannot catch this: the dev instance runs with unique
+  serials off.
 
 Not re-measured this round: **8.4.1** and **6.0.14** are not part of the gating
 version-matrix (which runs 6.4.2 / 7.1.16 / 8.0.4 / 8.7.2), so their columns
