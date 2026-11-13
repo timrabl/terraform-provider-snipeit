@@ -93,8 +93,12 @@ func (r *HardwareResource) Schema(ctx context.Context, req resource.SchemaReques
 				Optional:            true,
 			},
 			"serial": schema.StringAttribute{
-				MarkdownDescription: "Serial number of the asset.",
-				Optional:            true,
+				MarkdownDescription: "Serial number of the asset. Left unset, the provider never sends " +
+					"the field, so an existing serial is not touched. Removing a previously configured " +
+					"serial clears it, except on Snipe-IT 8.3.5 and later with *unique serial numbers* " +
+					"enforced: there the API rejects an empty serial on update " +
+					"(`The serial must be a string.`), so the serial cannot be cleared through the API.",
+				Optional: true,
 			},
 			"order_number": schema.StringAttribute{
 				MarkdownDescription: "Order number of the purchase.",
@@ -146,7 +150,9 @@ func (r *HardwareResource) Configure(ctx context.Context, req resource.Configure
 	}
 }
 
-func (m *HardwareResourceModel) toBody() map[string]any {
+// toBody builds the request body. prior is the state before an update and nil
+// on create; it decides whether an unset serial is omitted or cleared.
+func (m *HardwareResourceModel) toBody(prior *HardwareResourceModel) map[string]any {
 	body := map[string]any{
 		"model_id":  m.ModelID.ValueInt64(),
 		"status_id": m.StatusID.ValueInt64(),
@@ -157,7 +163,16 @@ func (m *HardwareResourceModel) toBody() map[string]any {
 		body["asset_tag"] = m.AssetTag.ValueString()
 	}
 	tfutil.BodyString(body, "name", m.Name)
-	tfutil.BodyString(body, "serial", m.Serial)
+	// Snipe-IT 8.3.5+ validates serial on update as string|max:255 with
+	// `nullable` only when unique serials are off. The "" that BodyString
+	// sends for an unset serial becomes null (ConvertEmptyStringsToNull)
+	// and fails `string` on instances that enforce unique serials, so an
+	// unset serial is omitted rather than sent empty.
+	priorSerial := types.StringNull()
+	if prior != nil {
+		priorSerial = prior.Serial
+	}
+	tfutil.BodyStringSparse(body, "serial", m.Serial, priorSerial)
 	tfutil.BodyString(body, "order_number", m.OrderNumber)
 	tfutil.BodyString(body, "notes", m.Notes)
 	tfutil.BodyNullableString(body, "purchase_date", m.PurchaseDate)
@@ -209,7 +224,7 @@ func (r *HardwareResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	id, err := r.svc.CreateHardware(ctx, data.toBody())
+	id, err := r.svc.CreateHardware(ctx, data.toBody(nil))
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create asset", err.Error())
 		return
@@ -240,14 +255,15 @@ func (r *HardwareResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (r *HardwareResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data HardwareResourceModel
+	var data, prior HardwareResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	id := data.ID.ValueInt64()
-	if err := r.svc.UpdateHardware(ctx, id, data.toBody()); err != nil {
+	if err := r.svc.UpdateHardware(ctx, id, data.toBody(&prior)); err != nil {
 		resp.Diagnostics.AddError("Unable to update asset", err.Error())
 		return
 	}
