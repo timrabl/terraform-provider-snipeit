@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.3...v0.3.4) (2026-11-13)
+
+
+### Bug Fixes
+
+* **assets:** omit an unset hardware serial instead of sending "" ([#63](https://github.com/timrabl/terraform-provider-snipeit/issues/63)) ([6281150](https://github.com/timrabl/terraform-provider-snipeit/commit/6281150427e0edffd89175eaa922c208075334df))
+
 ## [0.3.3](https://github.com/timrabl/terraform-provider-snipeit/compare/v0.3.2...v0.3.3) (2026-10-13)
 
 
